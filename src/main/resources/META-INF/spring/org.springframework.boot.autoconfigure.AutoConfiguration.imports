@@ -1,0 +1,3 @@
+com.htech.jpa.reactive.ReactiveHibernateJpaAutoConfiguration
+com.htech.data.jpa.reactive.core.ReactiveJpaDataAutoConfiguration
+com.htech.jpa.reactive.repository.auto.ReactiveJpaRepositoriesAutoConfiguration
