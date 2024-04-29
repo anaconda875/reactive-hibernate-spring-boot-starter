@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.htech.jpa.reactive.ReactiveHibernateJpaAutoConfiguration\
+com.htech.data.jpa.reactive.core.ReactiveJpaDataAutoConfiguration\
+com.htech.data.jpa.reactive.repository.auto.ReactiveJpaRepositoriesAutoConfiguration
