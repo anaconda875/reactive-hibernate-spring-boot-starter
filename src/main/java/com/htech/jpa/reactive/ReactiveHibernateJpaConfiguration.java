@@ -17,6 +17,7 @@ import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.hibernate.reactive.provider.ReactivePersistenceProvider;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -121,11 +122,16 @@ public class ReactiveHibernateJpaConfiguration {
       JpaVendorAdapter jpaVendorAdapter,
       ObjectProvider<PersistenceUnitManager> persistenceUnitManager,
       ObjectProvider<EntityManagerFactoryBuilderCustomizer> customizers) {
+    Map<String, String> jpaProps = this.properties.getProperties();
+    if (org.apache.commons.lang3.StringUtils.isBlank(
+        jpaProps.get("jakarta.persistence.jdbc.url"))) {
+      throw new EntityManagerFactoryBeanCreationException(
+          "Failed to determine a suitable jakarta.persistence.jdbc.url Connection URL", jpaProps);
+    }
+
     EntityManagerFactoryBuilder builder =
         new EntityManagerFactoryBuilder(
-            jpaVendorAdapter,
-            this.properties.getProperties(),
-            persistenceUnitManager.getIfAvailable());
+            jpaVendorAdapter, jpaProps, persistenceUnitManager.getIfAvailable());
     customizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
     return builder;
   }
@@ -269,6 +275,20 @@ public class ReactiveHibernateJpaConfiguration {
       if (this.implicitNamingStrategy != null) {
         hibernateProperties.put("hibernate.implicit_naming_strategy", this.implicitNamingStrategy);
       }
+    }
+  }
+
+  public static class EntityManagerFactoryBeanCreationException extends BeanCreationException {
+
+    private final Map<String, String> jpaProps;
+
+    public EntityManagerFactoryBeanCreationException(String msg, Map<String, String> jpaProps) {
+      super(msg);
+      this.jpaProps = jpaProps;
+    }
+
+    public Map<String, String> getJpaProps() {
+      return jpaProps;
     }
   }
 }
