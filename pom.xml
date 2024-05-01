@@ -9,9 +9,9 @@
         <version>3.2.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.htech</groupId>
+    <groupId>io.github.anaconda875</groupId>
     <artifactId>hibernate-reactive-spring-boot-starter</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <properties>
         <java.version>17</java.version>
@@ -39,42 +39,12 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>
-<!--            <artifactId>spring-data-commons</artifactId>-->
             <artifactId>spring-data-jpa</artifactId>
-            <version>3.2.0</version>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-<!--            <version>3.2.0</version>-->
-            <!--<exclusions>
-                <exclusion>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-r2dbc</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.r2dbc</groupId>
-                    <artifactId>r2dbc-spi</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.postgresql</groupId>
-                    <artifactId>r2dbc-postgresql</artifactId>
-                </exclusion>
-            </exclusions>-->
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>io.vertx</groupId>-->
-<!--            <artifactId>vertx-pg-client</artifactId>-->
-<!--            <version>${vertx-pg-client.version}</version>-->
-<!--        </dependency>-->
-<!--        &lt;!&ndash; see: https://github.com/eclipse-vertx/vertx-sql-client/issues/1059 &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>com.ongres.scram</groupId>-->
-<!--            <artifactId>client</artifactId>-->
-<!--            <version>2.1</version>-->
-<!--            <optional>true</optional>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>org.hibernate.reactive</groupId>
