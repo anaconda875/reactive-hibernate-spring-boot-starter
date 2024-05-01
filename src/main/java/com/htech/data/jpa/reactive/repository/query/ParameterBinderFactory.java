@@ -18,16 +18,6 @@ public class ParameterBinderFactory {
     return new ParameterBinder(parameters, createSetters(bindings, setterFactory));
   }
 
-  /**
-   * Creates a {@link ParameterBinder} that just matches method parameter to parameters of a {@link
-   * jakarta.persistence.criteria.CriteriaQuery}.
-   *
-   * @param parameters method parameters that are available for binding, must not be {@literal
-   *     null}.
-   * @param metadata must not be {@literal null}.
-   * @return a {@link ParameterBinder} that can assign values for the method parameters to query
-   *     parameters of a {@link jakarta.persistence.criteria.CriteriaQuery}
-   */
   static ParameterBinder createCriteriaBinder(
       ReactiveJpaParameters parameters,
       List<ParameterMetadataProvider.ParameterMetadata<?>> metadata) {

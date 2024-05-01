@@ -4,7 +4,6 @@ import java.util.Set;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.Nullable;
 
-/** For native query */
 public class DefaultQueryEnhancer implements QueryEnhancer {
 
   protected final DeclaredQuery query;

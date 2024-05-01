@@ -46,11 +46,7 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
                 return new ReactiveJpaQueryExecution.ProcedureExecution(method.isCollectionQuery());
               } else*/ if (method.isCollectionQuery()) {
                 return new ReactiveJpaQueryExecution.CollectionExecution();
-              } /*else if (method.isSliceQuery()) {
-                  return new ReactiveJpaQueryExecution.SlicedExecution();
-                } else if (method.isPageQuery()) {
-                  return new ReactiveJpaQueryExecution.PagedExecution();
-                }*/ else if (method.isModifyingQuery()) {
+              } else if (method.isModifyingQuery()) {
                 return null;
               } else {
                 return new ReactiveJpaQueryExecution.SingleEntityExecution();
@@ -63,11 +59,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     return method;
   }
 
-  /**
-   * Returns the {@link JpaMetamodel}.
-   *
-   * @return
-   */
   protected JpaMetamodel getMetamodel() {
     return metamodel;
   }
@@ -78,11 +69,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     return doExecute(getExecution(), parameters);
   }
 
-  /**
-   * @param execution
-   * @param values
-   * @return
-   */
   @Nullable
   private Object doExecute(ReactiveJpaQueryExecution execution, Object[] values) {
 
@@ -125,32 +111,7 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     }
   }
 
-  /**
-   * Applies the declared query hints to the given query.
-   *
-   * @param query
-   * @return
-   */
   protected <T extends Mutiny.AbstractQuery> T applyHints(T query, ReactiveJpaQueryMethod method) {
-
-    /*List<QueryHint> hints = method.getHints();
-
-    if (!hints.isEmpty()) {
-      for (QueryHint hint : hints) {
-        applyQueryHint(query, hint);
-      }
-    }*/
-
-    // Apply any meta-attributes that exist
-    //    if (method.hasQueryMetaAttributes()) {
-    // TODO
-    //      if (provider.getCommentHintKey() != null) {
-    //        query.setHint( //
-    //            provider.getCommentHintKey(),
-    // provider.getCommentHintValue(method.getQueryMetaAttributes().getComment()));
-    //      }
-    //    }
-
     return query;
   }
 
@@ -184,14 +145,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   private Mutiny.AbstractQuery applyEntityGraphConfiguration(
       Mutiny.AbstractQuery query, ReactiveJpaQueryMethod method) {
-    /*JpaEntityGraph entityGraph = method.getEntityGraph();
-
-    if (entityGraph != null) {
-      QueryHints hints = Jpa21Utils.getFetchGraphHint(sessionFactory, method.getEntityGraph(),
-          getQueryMethod().getEntityInformation().getJavaType());
-
-      hints.forEach(query::setHint);
-    }*/
 
     return query;
   }
@@ -204,12 +157,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    return method.applyHintsToCountQuery() ? applyHints(countQuery, method) : countQuery;
   }
 
-  /**
-   * Returns the type to be used when creating the JPA query.
-   *
-   * @return
-   * @since 2.0.5
-   */
   @Nullable
   protected Class<?> getTypeToRead(ReturnedType returnedType) {
     // TODO
@@ -226,12 +173,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   protected abstract Mutiny.AbstractQuery doCreateQuery(
       ReactiveJpaParametersParameterAccessor accessor, ReactiveJpaQueryMethod method);
 
-  /**
-   * Creates a {@link TypedQuery} for counting using the given values.
-   *
-   * @param accessor must not be {@literal null}.
-   * @return
-   */
   protected abstract Mutiny.AbstractQuery doCreateCountQuery(
       ReactiveJpaParametersParameterAccessor accessor);
 
@@ -267,13 +208,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
       return new TupleConverter.TupleBackedMap(tuple);
     }
 
-    /**
-     * A {@link Map} implementation which delegates all calls to a {@link Tuple}. Depending on the
-     * provided {@link Tuple} implementation it might return the same value for various keys of
-     * which only one will appear in the key/entry set.
-     *
-     * @author Jens Schauder
-     */
     private static class TupleBackedMap implements Map<String, Object> {
 
       private static final String UNMODIFIABLE_MESSAGE = "A TupleBackedMap cannot be modified";
@@ -294,14 +228,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
         return tuple.getElements().isEmpty();
       }
 
-      /**
-       * If the key is not a {@code String} or not a key of the backing {@link Tuple} this returns
-       * {@code false}. Otherwise this returns {@code true} even when the value from the backing
-       * {@code Tuple} is {@code null}.
-       *
-       * @param key the key for which to get the value from the map.
-       * @return whether the key is an element of the backing tuple.
-       */
       @Override
       public boolean containsKey(Object key) {
 
@@ -318,14 +244,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
         return Arrays.asList(tuple.toArray()).contains(value);
       }
 
-      /**
-       * If the key is not a {@code String} or not a key of the backing {@link Tuple} this returns
-       * {@code null}. Otherwise the value from the backing {@code Tuple} is returned, which also
-       * might be {@code null}.
-       *
-       * @param key the key for which to get the value from the map.
-       * @return the value of the backing {@link Tuple} for that key or {@code null}.
-       */
       @Override
       @Nullable
       public Object get(Object key) {

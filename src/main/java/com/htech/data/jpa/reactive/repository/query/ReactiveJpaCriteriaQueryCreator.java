@@ -50,13 +50,6 @@ public class ReactiveJpaCriteriaQueryCreator
     this.escape = provider.getEscape();
   }
 
-  /**
-   * Creates the {@link CriteriaQuery} to apply predicates on.
-   *
-   * @param builder will never be {@literal null}.
-   * @param type will never be {@literal null}.
-   * @return must not be {@literal null}.
-   */
   protected CriteriaQuery<? extends Object> createCriteriaQuery(
       CriteriaBuilder builder, ReturnedType type) {
 
@@ -67,12 +60,6 @@ public class ReactiveJpaCriteriaQueryCreator
         : builder.createQuery(typeToRead);
   }
 
-  /**
-   * Returns all {@link jakarta.persistence.criteria.ParameterExpression} created when creating the
-   * query.
-   *
-   * @return the parameterExpressions
-   */
   public List<ParameterMetadataProvider.ParameterMetadata<?>> getParameterExpressions() {
     return provider.getExpressions();
   }
@@ -92,26 +79,11 @@ public class ReactiveJpaCriteriaQueryCreator
     return builder.or(base, predicate);
   }
 
-  /**
-   * Finalizes the given {@link Predicate} and applies the given sort. Delegates to {@link
-   * #complete(Predicate, Sort, CriteriaQuery, CriteriaBuilder, Root)} and hands it the current
-   * {@link CriteriaQuery} and {@link CriteriaBuilder}.
-   */
   @Override
   protected final CriteriaQuery<? extends Object> complete(Predicate predicate, Sort sort) {
     return complete(predicate, sort, query, builder, root);
   }
 
-  /**
-   * Template method to finalize the given {@link Predicate} using the given {@link CriteriaQuery}
-   * and {@link CriteriaBuilder}.
-   *
-   * @param predicate
-   * @param sort
-   * @param query
-   * @param builder
-   * @return
-   */
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected CriteriaQuery<? extends Object> complete(
       @Nullable Predicate predicate,
@@ -172,23 +144,10 @@ public class ReactiveJpaCriteriaQueryCreator
     return returnedType.getInputProperties();
   }
 
-  /**
-   * Creates a {@link Predicate} from the given {@link Part}.
-   *
-   * @param part
-   * @param root
-   * @return
-   */
   private Predicate toPredicate(Part part, Root<?> root) {
     return new PredicateBuilder(part, root).build();
   }
 
-  /**
-   * Simple builder to contain logic to create JPA {@link Predicate}s from {@link Part}s.
-   *
-   * @author Phil Webb
-   * @author Oliver Gierke
-   */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private class PredicateBuilder {
 
@@ -203,11 +162,6 @@ public class ReactiveJpaCriteriaQueryCreator
       this.root = root;
     }
 
-    /**
-     * Builds a JPA {@link Predicate} from the underlying {@link Part}.
-     *
-     * @return
-     */
     public Predicate build() {
 
       PropertyPath property = part.getProperty();
@@ -316,13 +270,6 @@ public class ReactiveJpaCriteriaQueryCreator
       return builder.isNotMember(parameter, property);
     }
 
-    /**
-     * Applies an {@code UPPERCASE} conversion to the given {@link Expression} in case the
-     * underlying {@link Part} requires ignoring case.
-     *
-     * @param expression must not be {@literal null}.
-     * @return
-     */
     private <T> Expression<T> upperIfIgnoreCase(Expression<? extends T> expression) {
 
       switch (part.shouldIgnoreCase()) {
@@ -351,13 +298,6 @@ public class ReactiveJpaCriteriaQueryCreator
       return String.class.equals(expression.getJavaType());
     }
 
-    /**
-     * Returns a path to a {@link Comparable}.
-     *
-     * @param root
-     * @param part
-     * @return
-     */
     private Expression<? extends Comparable> getComparablePath(Root<?> root, Part part) {
       return getTypedPath(root, part);
     }

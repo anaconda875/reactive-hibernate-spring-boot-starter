@@ -39,35 +39,20 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
     CriteriaDelete<?> criteriaDelete = createCriteriaQuery(builder, type);
 
     this.builder = builder;
-    this.query = /*criteriaDelete.distinct(tree.isDistinct() && !tree.isCountProjection())*/
-        criteriaDelete;
+    this.query = criteriaDelete;
     this.root = query.from((Class) type.getDomainType());
     this.provider = provider;
     this.returnedType = type;
     this.escape = provider.getEscape();
   }
 
-  /**
-   * Creates the {@link CriteriaQuery} to apply predicates on.
-   *
-   * @param builder will never be {@literal null}.
-   * @param type will never be {@literal null}.
-   * @return must not be {@literal null}.
-   */
   protected CriteriaDelete<? extends Object> createCriteriaQuery(
       CriteriaBuilder builder, ReturnedType type) {
-    Class<?> typeToRead = /* tree.isDelete() ?*/ type.getDomainType() /* : type.getTypeToRead()*/;
+    Class<?> typeToRead = type.getDomainType();
 
-    return /*(typeToRead == null) || tree.isExistsProjection() //
-           ? builder.createTupleQuery() //
-           : */ builder.createCriteriaDelete(typeToRead);
+    return builder.createCriteriaDelete(typeToRead);
   }
 
-  /**
-   * Returns all {@link ParameterExpression} created when creating the query.
-   *
-   * @return the parameterExpressions
-   */
   public List<ParameterMetadataProvider.ParameterMetadata<?>> getParameterExpressions() {
     return provider.getExpressions();
   }
@@ -92,16 +77,6 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
     return complete(predicate, sort, query, builder, root);
   }
 
-  /**
-   * Template method to finalize the given {@link Predicate} using the given {@link CriteriaQuery}
-   * and {@link CriteriaBuilder}.
-   *
-   * @param predicate
-   * @param sort
-   * @param query
-   * @param builder
-   * @return
-   */
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected CriteriaDelete<?> complete(
       @Nullable Predicate predicate,
@@ -110,51 +85,7 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
       CriteriaBuilder builder,
       Root<?> root) {
 
-    /*if (returnedType.needsCustomConstruction()) {
-
-      Collection<String> requiredSelection = getRequiredSelection(sort, returnedType);
-      List<Selection<?>> selections = new ArrayList<>();
-
-      for (String property : requiredSelection) {
-
-        PropertyPath path = PropertyPath.from(property, returnedType.getDomainType());
-        selections.add(toExpressionRecursively(root, path, true).alias(property));
-      }
-
-      Class<?> typeToRead = returnedType.getReturnedType();
-
-      query =
-          typeToRead.isInterface() //
-              ? query.multiselect(selections) //
-              : query.select(
-                  (Selection)
-                      builder.construct(
-                          typeToRead, //
-                          selections.toArray(new Selection[0])));
-
-    } else if (tree.isExistsProjection()) {
-
-      if (root.getModel().hasSingleIdAttribute()) {
-
-        SingularAttribute<?, ?> id =
-            root.getModel().getId(root.getModel().getIdType().getJavaType());
-        query = query.multiselect(root.get((SingularAttribute) id).alias(id.getName()));
-
-      } else {
-
-        query =
-            query.multiselect(
-                root.getModel().getIdClassAttributes().stream() //
-                    .map(it -> (Selection<?>) root.get((SingularAttribute) it).alias(it.getName()))
-                    .collect(Collectors.toList()));
-      }
-
-    } else {
-      query = query.select((Root) root);
-    }*/
-
     CriteriaDelete<?> delete = query;
-    /* query.orderBy(QueryUtils.toOrders(sort, root, builder));*/
     return predicate == null ? delete : delete.where(predicate);
   }
 
@@ -162,23 +93,10 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
     return returnedType.getInputProperties();
   }
 
-  /**
-   * Creates a {@link Predicate} from the given {@link Part}.
-   *
-   * @param part
-   * @param root
-   * @return
-   */
   private Predicate toPredicate(Part part, Root<?> root) {
     return new PredicateBuilder(part, root).build();
   }
 
-  /**
-   * Simple builder to contain logic to create JPA {@link Predicate}s from {@link Part}s.
-   *
-   * @author Phil Webb
-   * @author Oliver Gierke
-   */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private class PredicateBuilder {
 
@@ -193,11 +111,6 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
       this.root = root;
     }
 
-    /**
-     * Builds a JPA {@link Predicate} from the underlying {@link Part}.
-     *
-     * @return
-     */
     public Predicate build() {
 
       PropertyPath property = part.getProperty();
@@ -306,13 +219,6 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
       return builder.isNotMember(parameter, property);
     }
 
-    /**
-     * Applies an {@code UPPERCASE} conversion to the given {@link Expression} in case the
-     * underlying {@link Part} requires ignoring case.
-     *
-     * @param expression must not be {@literal null}.
-     * @return
-     */
     private <T> Expression<T> upperIfIgnoreCase(Expression<? extends T> expression) {
 
       switch (part.shouldIgnoreCase()) {
@@ -341,13 +247,6 @@ public class ReactiveJpaCriteriaDeleteQueryCreator
       return String.class.equals(expression.getJavaType());
     }
 
-    /**
-     * Returns a path to a {@link Comparable}.
-     *
-     * @param root
-     * @param part
-     * @return
-     */
     private Expression<? extends Comparable> getComparablePath(Root<?> root, Part part) {
       return getTypedPath(root, part);
     }

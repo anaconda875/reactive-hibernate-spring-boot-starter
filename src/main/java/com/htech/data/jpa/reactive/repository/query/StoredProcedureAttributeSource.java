@@ -46,14 +46,6 @@ public enum StoredProcedureAttributeSource {
         procedureName, createOutputProcedureParameterFrom(method, procedure));
   }
 
-  /**
-   * Tries to derive the procedure name from the given {@link Procedure}, falls back to the name of
-   * the given {@link Method}.
-   *
-   * @param method
-   * @param procedure
-   * @return
-   */
   private String deriveProcedureNameFrom(Method method, Procedure procedure) {
 
     if (StringUtils.hasText(procedure.value())) {
@@ -64,14 +56,6 @@ public enum StoredProcedureAttributeSource {
     return StringUtils.hasText(procedureName) ? procedureName : method.getName();
   }
 
-  /**
-   * Extract procedure attributes from method and procedure.
-   *
-   * @param method
-   * @param namedStoredProc
-   * @param procedure
-   * @return
-   */
   private StoredProcedureAttributes newProcedureAttributesFrom(
       Method method, NamedStoredProcedureQuery namedStoredProc, Procedure procedure) {
 
@@ -97,13 +81,6 @@ public enum StoredProcedureAttributeSource {
     return new StoredProcedureAttributes(namedStoredProc.name(), outputParameters, true);
   }
 
-  /**
-   * Create a {@link ProcedureParameter} from relevant {@link Method} and {@link Procedure}.
-   *
-   * @param method
-   * @param procedure
-   * @return
-   */
   private ProcedureParameter createOutputProcedureParameterFrom(
       Method method, Procedure procedure) {
 
@@ -113,13 +90,6 @@ public enum StoredProcedureAttributeSource {
         method.getReturnType());
   }
 
-  /**
-   * Translate all the {@Link NamedStoredProcedureQuery} parameters into a {@link List} of {@link
-   * StoredProcedureParameter}s.
-   *
-   * @param namedStoredProc
-   * @return
-   */
   private List<StoredProcedureParameter> extractOutputParametersFrom(
       NamedStoredProcedureQuery namedStoredProc) {
 
@@ -142,12 +112,6 @@ public enum StoredProcedureAttributeSource {
     return outputParameters;
   }
 
-  /**
-   * @param method must not be {@literal null}.
-   * @param entityMetadata must not be {@literal null}.
-   * @param procedure must not be {@literal null}.
-   * @return
-   */
   @Nullable
   private NamedStoredProcedureQuery tryFindAnnotatedNamedStoredProcedureQuery(
       Method method, JpaEntityMetadata<?> entityMetadata, Procedure procedure) {
@@ -176,12 +140,6 @@ public enum StoredProcedureAttributeSource {
     return null;
   }
 
-  /**
-   * @param method
-   * @param entityMetadata
-   * @param procedure
-   * @return
-   */
   private String derivedNamedProcedureNameFrom(
       Method method, JpaEntityMetadata<?> entityMetadata, Procedure procedure) {
 
@@ -190,10 +148,6 @@ public enum StoredProcedureAttributeSource {
         : entityMetadata.getEntityName() + "." + method.getName();
   }
 
-  /**
-   * @param entityType
-   * @return
-   */
   private List<NamedStoredProcedureQuery> collectNamedStoredProcedureQueriesFrom(
       Class<?> entityType) {
 

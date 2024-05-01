@@ -148,16 +148,8 @@ public class QueryUtils {
     FIELD_ALIAS_PATTERN = compile(builder.toString());
   }
 
-  /** Private constructor to prevent instantiation. */
   private QueryUtils() {}
 
-  /**
-   * Returns the query string to execute an exists query for the given id attributes.
-   *
-   * @param entityName the name of the entity to create the query for, must not be {@literal null}.
-   * @param countQueryPlaceHolder the placeholder for the count clause, must not be {@literal null}.
-   * @param idAttributes the id attributes for the entity, must not be {@literal null}.
-   */
   public static String getExistsQueryString(
       String entityName, String countQueryPlaceHolder, Iterable<String> idAttributes) {
 
@@ -171,14 +163,6 @@ public class QueryUtils {
     return String.format(COUNT_QUERY_STRING, countQueryPlaceHolder, entityName) + whereClause;
   }
 
-  /**
-   * Returns the query string for the given class name.
-   *
-   * @param template must not be {@literal null}.
-   * @param entityName must not be {@literal null}.
-   * @return the template with placeholders replaced by the {@literal entityName}. Guaranteed to be
-   *     not {@literal null}.
-   */
   public static String getQueryString(String template, String entityName) {
 
     Assert.hasText(entityName, "Entity name must not be null or empty");
@@ -186,27 +170,10 @@ public class QueryUtils {
     return String.format(template, entityName);
   }
 
-  /**
-   * Adds {@literal order by} clause to the JPQL query. Uses the first alias to bind the sorting
-   * property to.
-   *
-   * @param query the query string to which sorting is applied
-   * @param sort the sort specification to apply.
-   * @return the modified query string.
-   */
   public static String applySorting(String query, Sort sort) {
     return applySorting(query, sort, detectAlias(query));
   }
 
-  /**
-   * Adds {@literal order by} clause to the JPQL query.
-   *
-   * @param query the query string to which sorting is applied. Must not be {@literal null} or
-   *     empty.
-   * @param sort the sort specification to apply.
-   * @param alias the alias to be used in the order by clause. May be {@literal null} or empty.
-   * @return the modified query string.
-   */
   public static String applySorting(String query, Sort sort, @Nullable String alias) {
 
     Assert.hasText(query, "Query must not be null or empty");
@@ -236,25 +203,11 @@ public class QueryUtils {
     return builder.toString();
   }
 
-  /**
-   * Returns {@code true} if the query has {@code order by} clause. The query has {@code order by}
-   * clause if there is an {@code order by} which is not part of window clause.
-   *
-   * @param query the analysed query string
-   * @return {@code true} if the query has {@code order by} clause, {@code false} otherwise
-   */
   private static boolean hasOrderByClause(String query) {
     return countOccurrences(ORDER_BY, query)
         > countOccurrences(ORDER_BY_IN_WINDOW_OR_SUBSELECT, query);
   }
 
-  /**
-   * Counts the number of occurrences of the pattern in the string
-   *
-   * @param pattern regex with a group to match
-   * @param string analysed string
-   * @return the number of occurrences of the pattern in the string
-   */
   private static int countOccurrences(Pattern pattern, String string) {
 
     Matcher matcher = pattern.matcher(string);
@@ -266,16 +219,6 @@ public class QueryUtils {
     return occurrences;
   }
 
-  /**
-   * Returns the order clause for the given {@link Sort.Order}. Will prefix the clause with the
-   * given alias if the referenced property refers to a join alias, i.e. starts with {@code
-   * $alias.}.
-   *
-   * @param joinAliases the join aliases of the original query. Must not be {@literal null}.
-   * @param alias the alias for the root entity. May be {@literal null}.
-   * @param order the order object to build the clause for. Must not be {@literal null}.
-   * @return a String containing an order clause. Guaranteed to be not {@literal null}.
-   */
   private static String getOrderClause(
       Set<String> joinAliases,
       Set<String> selectionAlias,
@@ -314,12 +257,6 @@ public class QueryUtils {
     return String.format("%s %s", wrapped, toJpaDirection(order));
   }
 
-  /**
-   * Returns the aliases used for {@code left (outer) join}s.
-   *
-   * @param query a query string to extract the aliases of joins from. Must not be {@literal null}.
-   * @return a {@literal Set} of aliases used in the query. Guaranteed to be not {@literal null}.
-   */
   static Set<String> getOuterJoinAliases(String query) {
 
     Set<String> result = new HashSet<>();
@@ -336,12 +273,6 @@ public class QueryUtils {
     return result;
   }
 
-  /**
-   * Returns the aliases used for fields in the query.
-   *
-   * @param query a {@literal String} containing a query. Must not be {@literal null}.
-   * @return a {@literal Set} containing all found aliases. Guaranteed to be not {@literal null}.
-   */
   private static Set<String> getFieldAliases(String query) {
 
     Set<String> result = new HashSet<>();
@@ -357,12 +288,6 @@ public class QueryUtils {
     return result;
   }
 
-  /**
-   * Returns the aliases used for aggregate functions like {@code SUM, COUNT, ...}.
-   *
-   * @param query a {@literal String} containing a query. Must not be {@literal null}.
-   * @return a {@literal Set} containing all found aliases. Guaranteed to be not {@literal null}.
-   */
   static Set<String> getFunctionAliases(String query) {
 
     Set<String> result = new HashSet<>();
@@ -396,13 +321,6 @@ public class QueryUtils {
     return alias;
   }
 
-  /**
-   * Remove subqueries from the query, in order to identify the correct alias in order by clauses.
-   * If the entire query is surrounded by parenthesis, the outermost parenthesis are not removed.
-   *
-   * @param query
-   * @return query with all subqueries removed.
-   */
   static String removeSubqueries(String query) {
 
     if (!StringUtils.hasText(query)) {
@@ -459,16 +377,6 @@ public class QueryUtils {
     return -1;
   }
 
-  /**
-   * Creates a where-clause referencing the given entities and appends it to the given query string.
-   * Binds the given entities to the query.
-   *
-   * @param <T> type of the entities.
-   * @param queryString must not be {@literal null}.
-   * @param entities must not be {@literal null}.
-   * @param entityManager must not be {@literal null}.
-   * @return Guaranteed to be not {@literal null}.
-   */
   public static <T> Query applyAndBind(
       String queryString, Iterable<T> entities, EntityManager entityManager) {
 
@@ -565,12 +473,6 @@ public class QueryUtils {
     return countQuery.replaceFirst(ORDER_BY_PART, "");
   }
 
-  /**
-   * Returns whether the given {@link Query} contains named parameters.
-   *
-   * @param query Must not be {@literal null}.
-   * @return whether the given {@link Query} contains named parameters.
-   */
   public static boolean hasNamedParameter(Query query) {
 
     Assert.notNull(query, "Query must not be null");
@@ -588,26 +490,11 @@ public class QueryUtils {
     return false;
   }
 
-  /**
-   * Returns whether the given query contains named parameters.
-   *
-   * @param query can be {@literal null} or empty.
-   * @return whether the given query contains named parameters.
-   */
   @Deprecated
   static boolean hasNamedParameter(@Nullable String query) {
     return StringUtils.hasText(query) && NAMED_PARAMETER.matcher(query).find();
   }
 
-  /**
-   * Turns the given {@link Sort} into {@link jakarta.persistence.criteria.Order}s.
-   *
-   * @param sort the {@link Sort} instance to be transformed into JPA {@link
-   *     jakarta.persistence.criteria.Order}s.
-   * @param from must not be {@literal null}.
-   * @param cb must not be {@literal null}.
-   * @return a {@link List} of {@link jakarta.persistence.criteria.Order}s.
-   */
   public static List<jakarta.persistence.criteria.Order> toOrders(
       Sort sort, From<?, ?> from, CriteriaBuilder cb) {
 
@@ -627,13 +514,6 @@ public class QueryUtils {
     return orders;
   }
 
-  /**
-   * Returns whether the given JPQL query contains a constructor expression.
-   *
-   * @param query must not be {@literal null} or empty.
-   * @return whether the given JPQL query contains a constructor expression.
-   * @since 1.10
-   */
   public static boolean hasConstructorExpression(String query) {
 
     Assert.hasText(query, "Query must not be null or empty");
@@ -641,14 +521,6 @@ public class QueryUtils {
     return CONSTRUCTOR_EXPRESSION.matcher(query).find();
   }
 
-  /**
-   * Returns the projection part of the query, i.e. everything between {@code select} and {@code
-   * from}.
-   *
-   * @param query must not be {@literal null} or empty.
-   * @return the projection part of the query.
-   * @since 1.10.2
-   */
   public static String getProjection(String query) {
 
     Assert.hasText(query, "Query must not be null or empty");
@@ -658,16 +530,6 @@ public class QueryUtils {
     return projection.trim();
   }
 
-  /**
-   * Creates a criteria API {@link jakarta.persistence.criteria.Order} from the given {@link
-   * Sort.Order}.
-   *
-   * @param order the order to transform into a JPA {@link jakarta.persistence.criteria.Order}
-   * @param from the {@link From} the {@link Sort.Order} expression is based on
-   * @param cb the {@link CriteriaBuilder} to build the {@link jakarta.persistence.criteria.Order}
-   *     with
-   * @return Guaranteed to be not {@literal null}.
-   */
   @SuppressWarnings("unchecked")
   private static jakarta.persistence.criteria.Order toJpaOrder(
       Sort.Order order, From<?, ?> from, CriteriaBuilder cb) {
@@ -692,17 +554,6 @@ public class QueryUtils {
     return toExpressionRecursively(from, property, isForSelection, false);
   }
 
-  /**
-   * Creates an expression with proper inner and left joins by recursively navigating the path
-   *
-   * @param from the {@link From}
-   * @param property the property path
-   * @param isForSelection is the property navigated for the selection or ordering part of the
-   *     query?
-   * @param hasRequiredOuterJoin has a parent already required an outer join?
-   * @param <T> the type of the expression
-   * @return the expression
-   */
   @SuppressWarnings("unchecked")
   static <T> Expression<T> toExpressionRecursively(
       From<?, ?> from,
@@ -738,20 +589,6 @@ public class QueryUtils {
     return toExpressionRecursively(join, nextProperty, isForSelection, requiresOuterJoin);
   }
 
-  /**
-   * Checks if this attribute requires an outer join. This is the case e.g. if it hadn't already
-   * been fetched with an inner join and if it's an optional association, and if previous paths has
-   * already required outer joins. It also ensures outer joins are used even when Hibernate defaults
-   * to inner joins (HHH-12712 and HHH-12999).
-   *
-   * @param from the {@link From} to check for fetches.
-   * @param property the property path
-   * @param isForSelection is the property navigated for the selection or ordering part of the
-   *     query? if true, we need to generate an explicit outer join in order to prevent Hibernate to
-   *     use an inner join instead. see https://hibernate.atlassian.net/browse/HHH-12999
-   * @param hasRequiredOuterJoin has a parent already required an outer join?
-   * @return whether an outer join is to be used for integrating this attribute in a query.
-   */
   private static boolean requiresOuterJoin(
       From<?, ?> from,
       PropertyPath property,
@@ -845,15 +682,6 @@ public class QueryUtils {
         : (T) AnnotationUtils.getValue(annotation, propertyName);
   }
 
-  /**
-   * Returns an existing join for the given attribute if one already exists or creates a new one if
-   * not.
-   *
-   * @param from the {@link From} to get the current joins from.
-   * @param attribute the {@link Attribute} to look for in the current joins.
-   * @param joinType the join type to create if none was found
-   * @return will never be {@literal null}.
-   */
   private static Join<?, ?> getOrCreateJoin(From<?, ?> from, String attribute, JoinType joinType) {
 
     for (Join<?, ?> join : from.getJoins()) {
@@ -865,14 +693,6 @@ public class QueryUtils {
     return from.join(attribute, joinType);
   }
 
-  /**
-   * Return whether the given {@link From} contains an inner join for the attribute with the given
-   * name.
-   *
-   * @param from the {@link From} to check for joins.
-   * @param attribute the attribute name to check.
-   * @return true if the attribute has already been inner joined
-   */
   private static boolean isAlreadyInnerJoined(From<?, ?> from, String attribute) {
 
     for (Fetch<?, ?> fetch : from.getFetches()) {
@@ -894,13 +714,6 @@ public class QueryUtils {
     return false;
   }
 
-  /**
-   * Check any given {@link JpaSort.JpaOrder#isUnsafe()} order for presence of at least one property
-   * offending the {@link #PUNCTATION_PATTERN} and throw an {@link Exception} indicating potential
-   * unsafe order by expression.
-   *
-   * @param order
-   */
   static void checkSortExpression(Sort.Order order) {
 
     if (order instanceof JpaSort.JpaOrder jpaOrder && jpaOrder.isUnsafe()) {

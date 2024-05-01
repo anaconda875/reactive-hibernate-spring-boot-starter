@@ -55,14 +55,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   private final Lazy<JpaEntityMetadata<?>> entityMetadata;
   private final Map<Class<? extends Annotation>, Optional<Annotation>> annotationCache;
 
-  /**
-   * Creates a {@link JpaQueryMethod}.
-   *
-   * @param method must not be {@literal null}
-   * @param metadata must not be {@literal null}
-   * @param factory must not be {@literal null}
-   * @param extractor must not be {@literal null}
-   */
   protected ReactiveJpaQueryMethod(
       Method method,
       RepositoryMetadata metadata,
@@ -171,11 +163,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return this.entityMetadata.get();
   }
 
-  /**
-   * Returns whether the finder is a modifying one.
-   *
-   * @return
-   */
   @Override
   public boolean isModifyingQuery() {
     return modifying.getNullable() != null;
@@ -190,11 +177,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
             it -> Optional.ofNullable(AnnotatedElementUtils.findMergedAnnotation(method, it)));
   }
 
-  /**
-   * Returns all {@link QueryHint}s annotated at this class. Note, that {@link QueryHints}
-   *
-   * @return
-   */
   List<QueryHint> getHints() {
 
     QueryHints hints = this.queryHints.getNullable();
@@ -205,81 +187,39 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return Collections.emptyList();
   }
 
-  /**
-   * Returns the {@link LockModeType} to be used for the query.
-   *
-   * @return
-   */
   @Nullable
   LockModeType getLockModeType() {
     return lockModeType.getNullable();
   }
 
-  /**
-   * Returns the {@link EntityGraph} to be used for the query.
-   *
-   * @return
-   * @since 1.6
-   */
   @Nullable
   JpaEntityGraph getEntityGraph() {
     return jpaEntityGraph.getNullable();
   }
 
-  /**
-   * Returns whether the potentially configured {@link QueryHint}s shall be applied when triggering
-   * the count query for pagination.
-   *
-   * @return
-   */
   boolean applyHintsToCountQuery() {
 
     QueryHints hints = this.queryHints.getNullable();
     return hints != null ? hints.forCounting() : false;
   }
 
-  /** Might be useful in case of named query */
   ReactiveJpaQueryExtractor getQueryExtractor() {
     return extractor;
   }
 
-  /**
-   * Returns the actual return type of the method.
-   *
-   * @return
-   */
   Class<?> getReturnType() {
     return returnType;
   }
 
-  /**
-   * @return return true if {@link org.springframework.data.jpa.repository.Meta} annotation is
-   *     available.
-   * @since 3.0
-   */
   public boolean hasQueryMetaAttributes() {
     return getMetaAnnotation() != null;
   }
 
-  /**
-   * Returns the {@link org.springframework.data.jpa.repository.Meta} annotation that is applied to
-   * the method or {@code null} if not available.
-   *
-   * @return
-   * @since 3.0
-   */
   @Nullable
   org.springframework.data.jpa.repository.Meta getMetaAnnotation() {
     return doFindAnnotation(org.springframework.data.jpa.repository.Meta.class).orElse(null);
   }
 
-  /**
-   * Returns the {@link org.springframework.data.jpa.repository.query.Meta} attributes to be
-   * applied.
-   *
-   * @return never {@literal null}.
-   * @since 1.6
-   */
   public org.springframework.data.jpa.repository.query.Meta getQueryMetaAttributes() {
 
     org.springframework.data.jpa.repository.Meta meta = getMetaAnnotation();
@@ -297,12 +237,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return metaAttributes;
   }
 
-  /**
-   * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither
-   * the annotation found nor the attribute was specified.
-   *
-   * @return
-   */
   @Nullable
   public String getAnnotatedQuery() {
 
@@ -310,21 +244,10 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return StringUtils.hasText(query) ? query : null;
   }
 
-  /**
-   * @return {@code true} if this method is annotated with {@code @Query(name=…)}.
-   */
   boolean hasAnnotatedQueryName() {
     return StringUtils.hasText(getAnnotationValue("name", String.class));
   }
 
-  /**
-   * Returns the required query string declared in a {@link Query} annotation or throws {@link
-   * IllegalStateException} if neither the annotation found nor the attribute was specified.
-   *
-   * @return
-   * @throws IllegalStateException if no {@link Query} annotation is present or the query is empty.
-   * @since 2.0
-   */
   public String getRequiredAnnotatedQuery() throws IllegalStateException {
 
     String query = getAnnotatedQuery();
@@ -337,12 +260,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
         String.format("No annotated query found for query method %s", getName()));
   }
 
-  /**
-   * Returns the countQuery string declared in a {@link Query} annotation or {@literal null} if
-   * neither the annotation found nor the attribute was specified.
-   *
-   * @return
-   */
   @Nullable
   public String getCountQuery() {
 
@@ -350,13 +267,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return StringUtils.hasText(countQuery) ? countQuery : null;
   }
 
-  /**
-   * Returns the count query projection string declared in a {@link Query} annotation or {@literal
-   * null} if neither the annotation found nor the attribute was specified.
-   *
-   * @return
-   * @since 1.6
-   */
   @Nullable
   String getCountQueryProjection() {
 
@@ -364,11 +274,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return StringUtils.hasText(countProjection) ? countProjection : null;
   }
 
-  /**
-   * Returns whether the backing query is a native one.
-   *
-   * @return
-   */
   boolean isNativeQuery() {
     return this.isNativeQuery.get();
   }
@@ -385,32 +290,14 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   //    return StringUtils.hasText(annotatedName) ? annotatedName : getNamedQueryName() + ".count";
   //  }
 
-  /**
-   * Returns whether we should flush automatically for modifying queries.
-   *
-   * @return whether we should flush automatically.
-   */
   boolean getFlushAutomatically() {
     return getMergedOrDefaultAnnotationValue("flushAutomatically", Modifying.class, Boolean.class);
   }
 
-  /**
-   * Returns whether we should clear automatically for modifying queries.
-   *
-   * @return whether we should clear automatically.
-   */
   boolean getClearAutomatically() {
     return getMergedOrDefaultAnnotationValue("clearAutomatically", Modifying.class, Boolean.class);
   }
 
-  /**
-   * Returns the {@link Query} annotation's attribute casted to the given type or default value if
-   * no annotation available.
-   *
-   * @param attribute
-   * @param type
-   * @return
-   */
   private <T> T getAnnotationValue(String attribute, Class<T> type) {
     return getMergedOrDefaultAnnotationValue(attribute, Query.class, type);
   }
@@ -447,11 +334,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return true;
   }
 
-  /**
-   * Return {@literal true} if the method contains a {@link Procedure} annotation.
-   *
-   * @return
-   */
   public boolean isProcedureQuery() {
     return this.isProcedureQuery.get();
   }
@@ -466,12 +348,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return storedProcedureAttributes;
   }
 
-  /**
-   * Returns the {@link QueryRewriter} type.
-   *
-   * @return type of the {@link QueryRewriter}
-   * @since 3.0
-   */
   public Class<? extends QueryRewriter> getQueryRewriter() {
     return getMergedOrDefaultAnnotationValue("queryRewriter", Query.class, Class.class);
   }

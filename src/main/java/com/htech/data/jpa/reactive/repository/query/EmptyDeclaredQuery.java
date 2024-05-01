@@ -7,9 +7,6 @@ import org.springframework.util.Assert;
 
 public class EmptyDeclaredQuery implements DeclaredQuery {
 
-  /**
-   * An implementation implementing the NULL-Object pattern for situations where there is no query.
-   */
   static final DeclaredQuery EMPTY_QUERY = new EmptyDeclaredQuery();
 
   @Override

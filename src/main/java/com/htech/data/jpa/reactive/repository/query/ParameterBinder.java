@@ -1,6 +1,5 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import jakarta.persistence.Query;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.data.jpa.support.PageableUtils;
@@ -15,29 +14,11 @@ public class ParameterBinder {
   private final Iterable<QueryParameterSetter> parameterSetters;
   private final boolean useJpaForPaging;
 
-  /**
-   * Creates a new {@link org.springframework.data.jpa.repository.query.ParameterBinder} for the
-   * given {@link ReactiveJpaParameters} and {@link QueryParameterSetter}s. Defaults to use JPA API
-   * to apply pagination offsets.
-   *
-   * @param parameters must not be {@literal null}.
-   * @param parameterSetters must not be {@literal null}.
-   * @since 2.0.6
-   */
   ParameterBinder(
       ReactiveJpaParameters parameters, Iterable<QueryParameterSetter> parameterSetters) {
     this(parameters, parameterSetters, true);
   }
 
-  /**
-   * Creates a new {@link org.springframework.data.jpa.repository.query.ParameterBinder} for the
-   * given {@link ReactiveJpaParameters} and {@link QueryParameterSetter}s.
-   *
-   * @param parameters must not be {@literal null}.
-   * @param parameterSetters must not be {@literal null}.
-   * @param useJpaForPaging determines whether {@link Query#setFirstResult(int)} and {@link
-   *     Query#setMaxResults(int)} shall be used for paging.
-   */
   public ParameterBinder(
       ReactiveJpaParameters parameters,
       Iterable<QueryParameterSetter> parameterSetters,
@@ -70,13 +51,6 @@ public class ParameterBinder {
     }
   }
 
-  /**
-   * Binds the parameters to the given query and applies special parameter types (e.g. pagination).
-   *
-   * @param query must not be {@literal null}.
-   * @param metadata must not be {@literal null}.
-   * @param accessor must not be {@literal null}.
-   */
   Mutiny.AbstractQuery bindAndPrepare(
       Mutiny.AbstractQuery query,
       QueryParameterSetter.QueryMetadata metadata,

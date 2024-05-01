@@ -23,7 +23,6 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
   //  private final DeclaredQuery declaredQuery;
   private final QueryParameterSetter.QueryMetadataCache metadataCache;
 
-  /** Creates a new {@link NamedQuery}. */
   private NamedQuery(ReactiveJpaQueryMethod method, Mutiny.SessionFactory sessionFactory) {
 
     super(method, sessionFactory);
@@ -70,9 +69,6 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
 
   // TODO
   /* static boolean hasNamedQuery(Mutiny.SessionFactory em, String queryName) {
-
-
-
     try {
       em.createNamedQuery(queryName);
       return true;
@@ -86,13 +82,6 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
     }
   }*/
 
-  /**
-   * Looks up a named query for the given {@link
-   * org.springframework.data.repository.query.QueryMethod}.
-   *
-   * @param method must not be {@literal null}.
-   * @param sessionFactory must not be {@literal null}.
-   */
   @Nullable
   public static RepositoryQuery lookupFrom(
       ReactiveJpaQueryMethod method, Mutiny.SessionFactory sessionFactory) {

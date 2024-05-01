@@ -14,11 +14,6 @@ import org.springframework.lang.Nullable;
 public class ReactiveJpaParameters
     extends Parameters<ReactiveJpaParameters, ReactiveJpaParameters.JpaParameter> {
 
-  /**
-   * Creates a new {@link ReactiveJpaParameters} instance from the given {@link Method}.
-   *
-   * @param method must not be {@literal null}.
-   */
   public ReactiveJpaParameters(Method method) {
     super(method, null);
   }
@@ -37,30 +32,15 @@ public class ReactiveJpaParameters
     return new ReactiveJpaParameters(parameters);
   }
 
-  /**
-   * @return {@code true} if the method signature declares Limit or Pageable parameters.
-   */
   public boolean hasLimitingParameters() {
     return hasLimitParameter() || hasPageableParameter();
   }
 
-  /**
-   * Custom {@link Parameter} implementation adding parameters of type {@link Temporal} to the
-   * special ones.
-   *
-   * @author Thomas Darimont
-   * @author Oliver Gierke
-   */
   public static class JpaParameter extends Parameter {
 
     private final @Nullable Temporal annotation;
     private @Nullable TemporalType temporalType;
 
-    /**
-     * Creates a new {@link ReactiveJpaParameters.JpaParameter}.
-     *
-     * @param parameter must not be {@literal null}.
-     */
     protected JpaParameter(MethodParameter parameter) {
 
       super(parameter, TypeInformation.of(Parameter.class));
@@ -79,18 +59,10 @@ public class ReactiveJpaParameters
       return super.isBindable() || isTemporalParameter();
     }
 
-    /**
-     * @return {@literal true} if this parameter is of type {@link Date} and has an {@link Temporal}
-     *     annotation.
-     */
     boolean isTemporalParameter() {
       return isDateParameter() && hasTemporalParamAnnotation();
     }
 
-    /**
-     * @return the {@link TemporalType} on the {@link Temporal} annotation of the given {@link
-     *     Parameter}.
-     */
     @Nullable
     TemporalType getTemporalType() {
 
@@ -101,12 +73,6 @@ public class ReactiveJpaParameters
       return this.temporalType;
     }
 
-    /**
-     * @return the required {@link TemporalType} on the {@link Temporal} annotation of the given
-     *     {@link Parameter}.
-     * @throws IllegalStateException if the parameter does not define a {@link TemporalType}.
-     * @since 2.0
-     */
     TemporalType getRequiredTemporalType() throws IllegalStateException {
 
       TemporalType temporalType = getTemporalType();

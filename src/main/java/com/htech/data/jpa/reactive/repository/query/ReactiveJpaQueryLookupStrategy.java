@@ -204,38 +204,11 @@ public class ReactiveJpaQueryLookupStrategy {
         NamedQueries namedQueries,
         Mutiny.SessionFactory sessionFactory) {
       // TODO
-      /*if (StringUtils.hasText(method.getCountQuery())) {
-        return method.getCountQuery();
-      }*/
-
-      //      String queryName = method.getNamedCountQueryName();
-
-      //      if (!StringUtils.hasText(queryName)) {
-      //        return method.getCountQuery();
-      //      }
-
-      /* if (namedQueries.hasQuery(queryName)) {
-        return namedQueries.getQuery(queryName);
-      }*/
-
-      /*boolean namedQuery = NamedQuery.hasNamedQuery(sessionFactory, queryName);
-
-      if (namedQuery) {
-        return method.getQueryExtractor().extractQueryString(em.createNamedQuery(queryName));
-      }*/
 
       return null;
     }
   }
 
-  /**
-   * {@link QueryLookupStrategy} to try to detect a declared query first ( {@link
-   * org.springframework.data.jpa.repository.Query}, JPA named query). In case none is found we fall
-   * back on query creation.
-   *
-   * @author Oliver Gierke
-   * @author Thomas Darimont
-   */
   private static class CreateIfNotFoundQueryLookupStrategy extends AbstractQueryLookupStrategy {
 
     private final DeclaredQueryLookupStrategy lookupStrategy;

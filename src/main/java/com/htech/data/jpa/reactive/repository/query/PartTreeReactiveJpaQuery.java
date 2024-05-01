@@ -89,9 +89,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
   @Override
   protected ReactiveJpaQueryExecution getExecution() {
     // TODO
-    /*if (this.getQueryMethod().isScrollQuery()) {
-      return new ReactiveJpaQueryExecution.ScrollExecution(this.tree.getSort(), new ScrollDelegate<>(entityInformation));
-    } else*/ if (this.tree.isDelete()) {
+    if (this.tree.isDelete()) {
       return new ReactiveJpaQueryExecution.DeleteExecution(sessionFactory);
     } else if (this.tree.isExistsProjection()) {
       return new ReactiveJpaQueryExecution.ExistsExecution();
@@ -159,7 +157,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     return Iterable.class.isAssignableFrom(parameter.getType()) || parameter.getType().isArray();
   }
 
-  /** Arrays are may be treated as collection like or in the case of binary data as scalar */
   private static boolean parameterIsScalarLike(ReactiveJpaParameters.JpaParameter parameter) {
     return !Iterable.class.isAssignableFrom(parameter.getType());
   }
@@ -168,12 +165,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     return type == Part.Type.IN || type == Part.Type.NOT_IN;
   }
 
-  /**
-   * Query preparer to create {@link CriteriaQuery} instances and potentially cache them.
-   *
-   * @author Oliver Gierke
-   * @author Thomas Darimont
-   */
   abstract class QueryPreparer<C extends CommonAbstractCriteria> {
 
     protected final @Nullable C cachedCriteria;
@@ -253,24 +244,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
       return tmp;
     }
 
-    /**
-     * Checks whether we are working with a cached {@link CriteriaQuery} and synchronizes the
-     * creation of a {@link TypedQuery} instance from it. This is due to non-thread-safety in the
-     * {@link CriteriaQuery} implementation of some persistence providers (i.e. Hibernate in this
-     * case), see DATAJPA-396.
-     *
-     * @param criteria must not be {@literal null}.
-     */
-    protected abstract Mutiny.AbstractQuery createQuery(Mutiny.Session session, C criteria); /* {
-
-      if (this.cachedCriteria != null) {
-        synchronized (this.cachedCriteria) {
-          return session.createQuery(criteria);
-        }
-      }
-
-      return session.createQuery(criteria);
-    }*/
+    protected abstract Mutiny.AbstractQuery createQuery(Mutiny.Session session, C criteria);
 
     protected AbstractQueryCreator<C, Predicate> createCreator(
         @Nullable JpaParametersParameterAccessor accessor) {
@@ -287,10 +261,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
         provider = new ParameterMetadataProvider(builder, parameters, escape);
         returnedType = processor.getReturnedType();
       }
-
-      /* if (accessor != null && accessor.getScrollPosition()instanceof KeysetScrollPosition keyset) {
-        return new JpaKeysetScrollQueryCreator(tree, returnedType, builder, provider, entityInformation, keyset);
-      }*/
 
       return (AbstractQueryCreator<C, Predicate>)
           new ReactiveJpaCriteriaQueryCreator(tree, returnedType, builder, provider);
@@ -354,7 +324,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
           tree, getQueryMethod().getResultProcessor().getReturnedType(), builder, provider);
     }
 
-    /** Customizes binding by skipping the pagination. */
     @Override
     protected Mutiny.AbstractQuery invokeBinding(
         ParameterBinder binder,
@@ -408,18 +377,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
       return new ReactiveJpaCriteriaDeleteQueryCreator(
           tree, getQueryMethod().getResultProcessor().getReturnedType(), builder, provider);
     }
-
-    /*@Override
-    protected Mutiny.AbstractQuery invokeBinding(
-        ParameterBinder binder,
-        Mutiny.AbstractQuery query,
-        JpaParametersParameterAccessor accessor,
-        QueryParameterSetter.QueryMetadataCache metadataCache) {
-
-      QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata("countquery", query);
-
-      return binder.bind(query, metadata, accessor);
-    }*/
 
     @Override
     protected Mutiny.AbstractQuery createQuery(

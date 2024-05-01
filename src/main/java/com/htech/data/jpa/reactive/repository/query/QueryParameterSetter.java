@@ -21,7 +21,6 @@ public interface QueryParameterSetter {
       JpaParametersParameterAccessor accessor,
       QueryParameterSetter.ErrorHandling errorHandling);
 
-  /** Noop implementation */
   QueryParameterSetter NOOP = (query, values, errorHandling) -> {};
 
   class NamedOrIndexedQueryParameterSetter implements QueryParameterSetter {
@@ -31,17 +30,10 @@ public interface QueryParameterSetter {
     protected final Parameter<?> parameter;
     protected final @Nullable TemporalType temporalType;
 
-    /**
-     * @param valueExtractor must not be {@literal null}.
-     * @param parameter must not be {@literal null}.
-     * @param temporalType may be {@literal null}.
-     */
     NamedOrIndexedQueryParameterSetter(
-        //        boolean useIndexBasedParams,
         Function<JpaParametersParameterAccessor, Object> valueExtractor,
         Parameter<?> parameter,
         @Nullable TemporalType temporalType) {
-      //      this.useIndexBasedParams = useIndexBasedParams;
 
       Assert.notNull(valueExtractor, "ValueExtractor must not be null");
 
@@ -57,66 +49,20 @@ public interface QueryParameterSetter {
 
       if (temporalType != null) {
         // TODO
-        /*Object extractedValue = valueExtractor.apply(accessor);
-
-        Date value = (Date) accessor.potentiallyUnwrap(extractedValue);
-
-        // One would think we can simply use parameter to identify the parameter we want to set.
-        // But that does not work with list valued parameters. At least Hibernate tries to bind them by name.
-        // TODO: move to using setParameter(Parameter, value) when https://hibernate.atlassian.net/browse/HHH-11870 is
-        // fixed.
-
-        if (parameter instanceof ParameterExpression) {
-          errorHandling.execute(() -> query.setParameter((Parameter<Date>) parameter, value, temporalType));
-        } else if (*/
-        /*query.hasNamedParameters() && */
-        /*parameter.getName() != null) {
-          errorHandling.execute(() -> query.setParameter(parameter.getName(), value, temporalType));
-        } else {
-
-          Integer position = parameter.getPosition();
-
-          */
-        /*if (position != null //
-        && (*/
-        /**/
-        /*query.getParameters().size() >= parameter.getPosition()*/
-        /**/
-        /* //
-         */
-        /**/
-        /*|| query.registerExcessParameters()*/
-        /**/
-        /* //
-         */
-        /**/
-        /*||*/
-        /**/
-        /* errorHandling == LENIENT)) {
-
-          errorHandling.execute(() -> query.setParameter(parameter.getPosition(), value, temporalType));
-        }*/
-        /*
-        }*/
-
       } else {
 
         Object value = valueExtractor.apply(accessor);
 
-        if (parameter instanceof ParameterExpression /* && !useIndexBasedParams*/) {
+        if (parameter instanceof ParameterExpression) {
           errorHandling.execute(() -> query.setParameter((Parameter<Object>) parameter, value));
-        } else if (
-        /*query.hasNamedParameters() && */ parameter.getName() != null) {
+        } else if (parameter.getName() != null) {
           errorHandling.execute(() -> query.setParameter(parameter.getName(), value));
 
         } else {
 
           Integer position = parameter.getPosition();
 
-          if (position != null //
-              && (true /*query.getParameters().size() >= position // */
-                  || errorHandling == QueryParameterSetter.ErrorHandling.LENIENT //
-              /*|| query.registerExcessParameters()*/ )) {
+          if (position != null) {
             errorHandling.execute(() -> query.setParameter(position, value));
           }
         }
@@ -151,24 +97,10 @@ public interface QueryParameterSetter {
     abstract void execute(Runnable block);
   }
 
-  /**
-   * Cache for {@link
-   * org.springframework.data.jpa.repository.query.QueryParameterSetter.QueryMetadata}. Optimizes
-   * for small cache sizes on a best-effort basis.
-   */
   class QueryMetadataCache {
 
     private Map<String, QueryParameterSetter.QueryMetadata> cache = Collections.emptyMap();
 
-    /**
-     * Retrieve the {@link
-     * org.springframework.data.jpa.repository.query.QueryParameterSetter.QueryMetadata} for a given
-     * {@code cacheKey}.
-     *
-     * @param cacheKey
-     * @param query
-     * @return
-     */
     public QueryParameterSetter.QueryMetadata getMetadata(
         String cacheKey, Mutiny.AbstractQuery query) {
 
@@ -196,7 +128,6 @@ public interface QueryParameterSetter {
     }
   }
 
-  /** Metadata for a JPA {@link Query}. */
   class QueryMetadata {
 
     private final boolean namedParameters = false;
@@ -226,14 +157,6 @@ public interface QueryParameterSetter {
       //      this.registerExcessParameters = metadata.registerExcessParameters;
     }
 
-    /**
-     * Create a {@link
-     * org.springframework.data.jpa.repository.query.QueryParameterSetter.BindableQuery} for a
-     * {@link Query}.
-     *
-     * @param query
-     * @return
-     */
     public QueryParameterSetter.BindableQuery withQuery(Mutiny.AbstractQuery query) {
       return new QueryParameterSetter.BindableQuery(this, query);
     }
@@ -270,7 +193,6 @@ public interface QueryParameterSetter {
     }
   }
 
-  /** A bindable {@link Query}. */
   class BindableQuery extends QueryMetadata {
 
     protected final Mutiny.AbstractQuery query;

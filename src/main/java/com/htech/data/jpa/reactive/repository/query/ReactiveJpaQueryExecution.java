@@ -71,72 +71,6 @@ public abstract class ReactiveJpaQueryExecution {
     }
   }
 
-  /*static class ScrollExecution extends ReactiveJpaQueryExecution {
-
-    private final Sort sort;
-    private final ScrollDelegate<?> delegate;
-
-    ScrollExecution(Sort sort, ScrollDelegate<?> delegate) {
-
-      this.sort = sort;
-      this.delegate = delegate;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Object doExecute(AbstractReactiveJpaQuery query, JpaParametersParameterAccessor accessor) {
-
-      ScrollPosition scrollPosition = accessor.getScrollPosition();
-      Mutiny.AbstractQuery scrollQuery = query.createQuery(accessor);
-
-      return delegate.scroll(scrollQuery, sort.and(accessor.getSort()), scrollPosition);
-    }
-  }*/
-
-  /* static class SlicedExecution extends ReactiveJpaQueryExecution {
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Object doExecute(AbstractReactiveJpaQuery query, JpaParametersParameterAccessor accessor) {
-
-      Pageable pageable = accessor.getPageable();
-      Query createQuery = query.createQuery(accessor);
-
-      int pageSize = 0;
-      if (pageable.isPaged()) {
-
-        pageSize = pageable.getPageSize();
-        createQuery.setMaxResults(pageSize + 1);
-      }
-
-      List<Object> resultList = createQuery.getResultList();
-
-      boolean hasNext = pageable.isPaged() && resultList.size() > pageSize;
-
-      return new SliceImpl<>(hasNext ? resultList.subList(0, pageSize) : resultList, pageable, hasNext);
-
-    }
-  }*/
-
-  /*static class PagedExecution extends ReactiveJpaQueryExecution {
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Object doExecute(AbstractReactiveJpaQuery repositoryQuery, JpaParametersParameterAccessor accessor) {
-
-      Query query = repositoryQuery.createQuery(accessor);
-
-      return PageableExecutionUtils.getPage(query.getResultList(), accessor.getPageable(),
-          () -> count(repositoryQuery, accessor));
-    }
-
-    private long count(AbstractReactiveJpaQuery repositoryQuery, JpaParametersParameterAccessor accessor) {
-
-      List<?> totals = repositoryQuery.createCountQuery(accessor).getResultList();
-      return (totals.size() == 1 ? CONVERSION_SERVICE.convert(totals.get(0), Long.class) : totals.size());
-    }
-  }*/
-
   static class SingleEntityExecution extends ReactiveJpaQueryExecution {
 
     @Override
@@ -147,7 +81,6 @@ public abstract class ReactiveJpaQueryExecution {
     }
   }
 
-  /** Executes a modifying query such as an update, insert or delete. */
   static class ModifyingExecution extends ReactiveJpaQueryExecution {
 
     private final Mutiny.SessionFactory sessionFactory;
@@ -191,13 +124,6 @@ public abstract class ReactiveJpaQueryExecution {
     }
   }
 
-  /**
-   * {@link ReactiveJpaQueryExecution} removing entities matching the query.
-   *
-   * @author Thomas Darimont
-   * @author Oliver Gierke
-   * @since 1.6
-   */
   static class DeleteExecution extends ReactiveJpaQueryExecution {
 
     private final Mutiny.SessionFactory sessionFactory;
@@ -212,25 +138,9 @@ public abstract class ReactiveJpaQueryExecution {
       Mutiny.MutationQuery query = (Mutiny.MutationQuery) jpaQuery.createQuery(accessor);
 
       return query.executeUpdate();
-      /*List<?> resultList = */
-      /*query.getResultList();*/
-      /* Collections.emptyList();
-
-      for (Object o : resultList) {
-        // TODO
-        //        sessionFactory.remove(o);
-      }
-
-      return jpaQuery.getQueryMethod().isCollectionQuery() ? resultList : resultList.size();*/
     }
   }
 
-  /**
-   * {@link ReactiveJpaQueryExecution} performing an exists check on the query.
-   *
-   * @author Mark Paluch
-   * @since 1.11
-   */
   static class ExistsExecution extends ReactiveJpaQueryExecution {
 
     @Override
@@ -242,12 +152,6 @@ public abstract class ReactiveJpaQueryExecution {
     }
   }
 
-  /**
-   * {@link ReactiveJpaQueryExecution} executing a stored procedure.
-   *
-   * @author Thomas Darimont
-   * @since 1.6
-   */
   static class ProcedureExecution extends ReactiveJpaQueryExecution {
 
     private final boolean collectionQuery;
@@ -265,77 +169,6 @@ public abstract class ReactiveJpaQueryExecution {
 
       // TODO
       return null;
-      //      Assert.isInstanceOf(StoredProcedureJpaQuery.class, jpaQuery);
-      //
-      //      StoredProcedureJpaQuery query = (StoredProcedureJpaQuery) jpaQuery;
-      //      StoredProcedureQuery procedure = query.createQuery(accessor);
-      //
-      //      try {
-      //
-      //        boolean returnsResultSet = procedure.execute();
-      //
-      //        if (returnsResultSet) {
-      //
-      //          if
-      // (!SurroundingTransactionDetectorMethodInterceptor.INSTANCE.isSurroundingTransactionActive()) {
-      //            throw new InvalidDataAccessApiUsageException(NO_SURROUNDING_TRANSACTION);
-      //          }
-      //
-      //          return collectionQuery ? procedure.getResultList() : procedure.getSingleResult();
-      //        }
-      //
-      //        return query.extractOutputValue(procedure);
-      //      } finally {
-      //
-      //        if (procedure instanceof AutoCloseable ac) {
-      //          try {
-      //            ac.close();
-      //          } catch (Exception ignored) {}
-      //        }
-      //      }
     }
   }
-
-  /**
-   * {@link ReactiveJpaQueryExecution} executing a Java 8 Stream.
-   *
-   * @author Thomas Darimont
-   * @since 1.8
-   */
-  //  static class StreamExecution extends ReactiveJpaQueryExecution {
-  //
-  //    private static final String NO_SURROUNDING_TRANSACTION = "You're trying to execute a
-  // streaming query method without a surrounding transaction that keeps the connection open so that
-  // the Stream can actually be consumed; Make sure the code consuming the stream uses
-  // @Transactional or any other way of declaring a (read-only) transaction";
-  //
-  //    private static final Method streamMethod = ReflectionUtils.findMethod(Query.class,
-  // "getResultStream");
-  //
-  //    @Override
-  //    protected Object doExecute(AbstractReactiveJpaQuery query, JpaParametersParameterAccessor
-  // accessor) {
-  //
-  //      if
-  // (!SurroundingTransactionDetectorMethodInterceptor.INSTANCE.isSurroundingTransactionActive()) {
-  //        throw new InvalidDataAccessApiUsageException(NO_SURROUNDING_TRANSACTION);
-  //      }
-  //
-  //      Query jpaQuery = query.createQuery(accessor);
-  //
-  //      // JPA 2.2 on the classpath
-  //      if (streamMethod != null) {
-  //        return ReflectionUtils.invokeMethod(streamMethod, jpaQuery);
-  //      }
-  //
-  //      // Fall back to legacy stream execution
-  //      PersistenceProvider persistenceProvider =
-  // PersistenceProvider.fromEntityManager(query.getEntityManager());
-  //      CloseableIterator<Object> iter =
-  // persistenceProvider.executeQueryWithResultStream(jpaQuery);
-  //
-  //      return StreamUtils.createStreamFromIterator(iter);
-  //    }
-  //  }
-
 }

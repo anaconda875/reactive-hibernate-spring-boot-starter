@@ -88,60 +88,24 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
     //    }
   }
 
-  /**
-   * Creates a count query from the original query, with no count projection.
-   *
-   * @return Guaranteed to be not {@literal null};
-   */
   @Override
   public String createCountQueryFor() {
     return createCountQueryFor(null);
   }
 
-  /**
-   * Create a count query from the original query, with potential custom projection.
-   *
-   * @param countProjection may be {@literal null}.
-   */
   @Override
   public String createCountQueryFor(@Nullable String countProjection) {
     return invokeQueryParser("createCountQuery", new Class[] {String.class}, countProjection);
-    /*try {
-      Method method = ReflectionUtils.findMethod(queryParser.getClass(), "createCountQuery", String.class);
-      ReflectionUtils.makeAccessible(method);
-      return (String) method.invoke(queryParser, countProjection);
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage(), e);
-    }*/
   }
 
-  /**
-   * Checks if the select clause has a new constructor instantiation in the JPA query.
-   *
-   * @return Guaranteed to return {@literal true} or {@literal false}.
-   */
   @Override
   public boolean hasConstructorExpression() {
     return invokeQueryParser("hasConstructorExpression", null);
-    /*try {
-      Method method = ReflectionUtils.findMethod(queryParser.getClass(), "hasConstructorExpression");
-      ReflectionUtils.makeAccessible(method);
-      return (boolean) method.invoke(queryParser);
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage(), e);
-    }*/
   }
 
   @Override
   public String getProjection() {
     return invokeQueryParser("projection", null);
-    /*try {
-      Method method = ReflectionUtils.findMethod(queryParser.getClass(), "projection");
-      ReflectionUtils.makeAccessible(method);
-      return (String) method.invoke(queryParser);
-    } catch (Exception e) {
-      throw new RuntimeException(e.getMessage(), e);
-    }*/
   }
 
   @Override

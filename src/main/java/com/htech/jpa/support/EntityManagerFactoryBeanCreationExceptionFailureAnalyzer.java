@@ -40,15 +40,11 @@ public class EntityManagerFactoryBeanCreationExceptionFailureAnalyzer
       ReactiveHibernateJpaConfiguration.EntityManagerFactoryBeanCreationException cause) {
     StringBuilder action = new StringBuilder();
     action.append(String.format("Consider the following:%n"));
-    /*if (EmbeddedDatabaseConnection.NONE == cause.getEmbeddedDatabaseConnection()) {
-      action.append(String.format("\tIf you want an embedded database (H2), please put it on the classpath.%n"));
-    }
-    else {*/
+
     action.append(
         String.format(
             "\tReview the configuration of %s.\n",
             "spring.jpa.properties.jakarta.persistence.jdbc.url"));
-    //    }
     action
         .append(
             "\tIf you have database settings to be loaded from a particular "

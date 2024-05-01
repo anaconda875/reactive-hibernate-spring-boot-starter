@@ -1,6 +1,5 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import jakarta.persistence.EntityManager;
 import org.hibernate.reactive.mutiny.Mutiny;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -118,24 +117,14 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
     return query;
   }
 
-  /**
-   * @return the query
-   */
   public DeclaredQuery getQuery() {
     return query;
   }
 
-  /**
-   * @return the countQuery
-   */
   public DeclaredQuery getCountQuery() {
     return countQuery.get();
   }
 
-  /**
-   * Creates an appropriate JPA query from an {@link EntityManager} according to the current {@link
-   * AbstractJpaQuery} type.
-   */
   protected Mutiny.AbstractQuery createReactiveJpaQuery(
       String queryString,
       ReactiveJpaQueryMethod method,

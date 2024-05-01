@@ -67,36 +67,18 @@ public class StoredProcedureAttributes {
     return SYNTHETIC_OUTPUT_PARAMETER_NAME + (i == 0 ? "" : i);
   }
 
-  /**
-   * Returns the name of the stored procedure.
-   *
-   * @return
-   */
   public String getProcedureName() {
     return procedureName;
   }
 
-  /**
-   * Returns the names of the output parameters.
-   *
-   * @return
-   */
   public boolean isNamedStoredProcedure() {
     return namedStoredProcedure;
   }
 
-  /**
-   * @return Returns the stored procedure output parameter list
-   */
   public List<ProcedureParameter> getOutputProcedureParameters() {
     return outputProcedureParameters;
   }
 
-  /**
-   * Returns whether the stored procedure will produce a result.
-   *
-   * @return
-   */
   public boolean hasReturnValue() {
 
     if (getOutputProcedureParameters().isEmpty()) return false;

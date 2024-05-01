@@ -5,7 +5,6 @@ import jakarta.persistence.criteria.ParameterExpression;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.springframework.data.jpa.provider.PersistenceProvider;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
@@ -26,42 +25,16 @@ public class ParameterMetadataProvider {
   private final @Nullable Iterator<Object> bindableParameterValues;
   private final EscapeCharacter escape;
 
-  /**
-   * Creates a new {@link ParameterMetadataProvider} from the given {@link CriteriaBuilder} and
-   * {@link ParametersParameterAccessor}.
-   *
-   * @param builder must not be {@literal null}.
-   * @param accessor must not be {@literal null}.
-   * @param escape must not be {@literal null}.
-   */
   public ParameterMetadataProvider(
       CriteriaBuilder builder, ParametersParameterAccessor accessor, EscapeCharacter escape) {
     this(builder, accessor.iterator(), accessor.getParameters(), escape);
   }
 
-  /**
-   * Creates a new {@link ParameterMetadataProvider} from the given {@link CriteriaBuilder} and
-   * {@link Parameters} with support for parameter value customizations via {@link
-   * PersistenceProvider}.
-   *
-   * @param builder must not be {@literal null}.
-   * @param parameters must not be {@literal null}.
-   * @param escape must not be {@literal null}.
-   */
   public ParameterMetadataProvider(
       CriteriaBuilder builder, Parameters<?, ?> parameters, EscapeCharacter escape) {
     this(builder, null, parameters, escape);
   }
 
-  /**
-   * Creates a new {@link ParameterMetadataProvider} from the given {@link CriteriaBuilder} an
-   * {@link Iterable} of all bindable parameter values, and {@link Parameters}.
-   *
-   * @param builder must not be {@literal null}.
-   * @param bindableParameterValues may be {@literal null}.
-   * @param parameters must not be {@literal null}.
-   * @param escape must not be {@literal null}.
-   */
   private ParameterMetadataProvider(
       CriteriaBuilder builder,
       @Nullable Iterator<Object> bindableParameterValues,
@@ -79,19 +52,10 @@ public class ParameterMetadataProvider {
     this.escape = escape;
   }
 
-  /**
-   * Returns all {@link ParameterMetadataProvider.ParameterMetadata}s built.
-   *
-   * @return the expressions
-   */
   public List<ParameterMetadataProvider.ParameterMetadata<?>> getExpressions() {
     return expressions;
   }
 
-  /**
-   * Builds a new {@link ParameterMetadataProvider.ParameterMetadata} for given {@link Part} and the
-   * next {@link Parameter}.
-   */
   @SuppressWarnings("unchecked")
   public <T> ParameterMetadataProvider.ParameterMetadata<T> next(Part part) {
 
@@ -103,15 +67,6 @@ public class ParameterMetadataProvider {
         next(part, parameter.getType(), parameter);
   }
 
-  /**
-   * Builds a new {@link ParameterMetadataProvider.ParameterMetadata} of the given {@link Part} and
-   * type. Forwards the underlying {@link Parameters} as well.
-   *
-   * @param <T> is the type parameter of the returned {@link
-   *     ParameterMetadataProvider.ParameterMetadata}.
-   * @param type must not be {@literal null}.
-   * @return ParameterMetadata for the next parameter.
-   */
   @SuppressWarnings("unchecked")
   public <T> ParameterMetadataProvider.ParameterMetadata<? extends T> next(
       Part part, Class<T> type) {
@@ -123,16 +78,6 @@ public class ParameterMetadataProvider {
         next(part, typeToUse, parameter);
   }
 
-  /**
-   * Builds a new {@link ParameterMetadataProvider.ParameterMetadata} for the given type and name.
-   *
-   * @param <T> type parameter for the returned {@link ParameterMetadataProvider.ParameterMetadata}.
-   * @param part must not be {@literal null}.
-   * @param type must not be {@literal null}.
-   * @param parameter providing the name for the returned {@link
-   *     ParameterMetadataProvider.ParameterMetadata}.
-   * @return a new {@link ParameterMetadataProvider.ParameterMetadata} for the given type and name.
-   */
   private <T> ParameterMetadataProvider.ParameterMetadata<T> next(
       Part part, Class<T> type, Parameter parameter) {
 
@@ -171,12 +116,6 @@ public class ParameterMetadataProvider {
     return escape;
   }
 
-  /**
-   * @author Oliver Gierke
-   * @author Thomas Darimont
-   * @author Andrey Kovalev
-   * @param <T>
-   */
   static class ParameterMetadata<T> {
 
     static final Object PLACEHOLDER = new Object();
@@ -187,7 +126,6 @@ public class ParameterMetadataProvider {
     private final boolean ignoreCase;
     private final boolean noWildcards;
 
-    /** Creates a new {@link ParameterMetadataProvider.ParameterMetadata}. */
     public ParameterMetadata(
         ParameterExpression<T> expression,
         Part part,
@@ -204,25 +142,14 @@ public class ParameterMetadataProvider {
       this.escape = escape;
     }
 
-    /**
-     * Returns the {@link ParameterExpression}.
-     *
-     * @return the expression
-     */
     public ParameterExpression<T> getExpression() {
       return expression;
     }
 
-    /** Returns whether the parameter shall be considered an {@literal IS NULL} parameter. */
     public boolean isIsNullParameter() {
       return Part.Type.IS_NULL.equals(type);
     }
 
-    /**
-     * Prepares the object before it's actually bound to the {@link jakarta.persistence.Query;}.
-     *
-     * @param value can be {@literal null}.
-     */
     @Nullable
     public Object prepare(@Nullable Object value) {
 
@@ -250,15 +177,6 @@ public class ParameterMetadataProvider {
           : value;
     }
 
-    /**
-     * Returns the given argument as {@link Collection} which means it will return it as is if it's
-     * a {@link Collections}, turn an array into an {@link ArrayList} or simply wrap any other value
-     * into a single element {@link Collections}.
-     *
-     * @param value the value to be converted to a {@link Collection}.
-     * @return the object itself as a {@link Collection} or a {@link Collection} constructed from
-     *     the value.
-     */
     @Nullable
     private static Collection<?> toCollection(@Nullable Object value) {
 

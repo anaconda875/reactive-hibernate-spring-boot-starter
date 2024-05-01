@@ -170,13 +170,6 @@ public class ReactiveJpaRepositoryFactoryBean<
         TypeInformation<?> componentType = returnType.getComponentType();
         Class<?> paramClass = componentType == null ? Object.class : componentType.getType();
 
-        /*if(!ReactiveJpaQueryExecutionConverters.supports(returnClass) || paramClass == Object.class
-         */
-        /*|| !QueryExecutionConverters.supports(componentType.getType())*/
-        /*) {
-          return obj;
-        }*/
-
         return conversionService.convert(obj, TypeDescriptor.forObject(obj));
       }
     }
@@ -304,10 +297,6 @@ public class ReactiveJpaRepositoryFactoryBean<
       public TransactionAttributeSource getTransactionAttributeSource() {
         return this.tas;
       }
-
-      /*private <R> R adapt(Object uni, Class<R> clazz) {
-        return (R) toWrapper(uni, clazz);
-      }*/
 
       private void prepareInvocation(
           ReflectiveMethodInvocation invocation,

@@ -60,8 +60,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
     }
 
     try {
-      // TODO
-      //      se.createQuery(query);
+
     } catch (RuntimeException e) {
       // Needed as there's ambiguities in how an invalid query string shall be expressed by the
       // persistence provider

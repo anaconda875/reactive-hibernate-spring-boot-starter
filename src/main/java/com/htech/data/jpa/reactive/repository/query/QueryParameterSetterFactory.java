@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.query.JpaParametersParameterAcces
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.spel.EvaluationContextProvider;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -19,12 +18,6 @@ public abstract class QueryParameterSetterFactory {
   @Nullable
   abstract QueryParameterSetter create(ParameterBinding binding, DeclaredQuery declaredQuery);
 
-  /**
-   * Creates a new {@link QueryParameterSetterFactory} for the given {@link ReactiveJpaParameters}.
-   *
-   * @param parameters must not be {@literal null}.
-   * @return a basic {@link QueryParameterSetterFactory} that can handle named and index parameters.
-   */
   static QueryParameterSetterFactory basic(ReactiveJpaParameters parameters) {
 
     Assert.notNull(parameters, "JpaParameters must not be null");
@@ -43,16 +36,6 @@ public abstract class QueryParameterSetterFactory {
         parameters, metadata);
   }
 
-  /**
-   * Creates a new {@link QueryParameterSetterFactory} for the given {@link SpelExpressionParser},
-   * {@link EvaluationContextProvider} and {@link Parameters}.
-   *
-   * @param parser must not be {@literal null}.
-   * @param evaluationContextProvider must not be {@literal null}.
-   * @param parameters must not be {@literal null}.
-   * @return a {@link QueryParameterSetterFactory} that can handle {@link
-   *     org.springframework.expression.spel.standard.SpelExpression}s.
-   */
   static QueryParameterSetterFactory parsing(
       SpelExpressionParser parser,
       QueryMethodEvaluationContextProvider evaluationContextProvider,
@@ -66,15 +49,6 @@ public abstract class QueryParameterSetterFactory {
         parser, evaluationContextProvider, parameters);
   }
 
-  /**
-   * Creates a {@link QueryParameterSetter} from a {@link ReactiveJpaParameters.JpaParameter}.
-   * Handles named and indexed parameters, TemporalType annotations and might ignore certain
-   * exception when requested to do so.
-   *
-   * @param valueExtractor extracts the relevant value from an array of method parameter values.
-   * @param binding the binding of the query parameter to be set.
-   * @param parameter the method parameter to bind.
-   */
   private static QueryParameterSetter createSetter(
       Function<JpaParametersParameterAccessor, Object> valueExtractor,
       ParameterBinding binding,
@@ -131,13 +105,6 @@ public abstract class QueryParameterSetterFactory {
     return bindableParameters.getParameter(parameterIndex);
   }
 
-  /**
-   * Handles bindings that are SpEL expressions by evaluating the expression to obtain a value.
-   *
-   * @author Jens Schauder
-   * @author Oliver Gierke
-   * @since 2.0
-   */
   private static class ExpressionBasedQueryParameterSetterFactory
       extends QueryParameterSetterFactory {
 
@@ -145,11 +112,6 @@ public abstract class QueryParameterSetterFactory {
     private final QueryMethodEvaluationContextProvider evaluationContextProvider;
     private final Parameters<?, ?> parameters;
 
-    /**
-     * @param parser must not be {@literal null}.
-     * @param evaluationContextProvider must not be {@literal null}.
-     * @param parameters must not be {@literal null}.
-     */
     ExpressionBasedQueryParameterSetterFactory(
         SpelExpressionParser parser,
         QueryMethodEvaluationContextProvider evaluationContextProvider,
@@ -177,13 +139,6 @@ public abstract class QueryParameterSetterFactory {
       return createSetter(values -> evaluateExpression(expression, values), binding, null);
     }
 
-    /**
-     * Evaluates the given {@link Expression} against the given values.
-     *
-     * @param expression must not be {@literal null}.
-     * @param accessor must not be {@literal null}.
-     * @return the result of the evaluation.
-     */
     @Nullable
     private Object evaluateExpression(
         Expression expression, JpaParametersParameterAccessor accessor) {
@@ -195,22 +150,10 @@ public abstract class QueryParameterSetterFactory {
     }
   }
 
-  /**
-   * Extracts values for parameter bindings from method parameters. It handles named as well as
-   * indexed parameters.
-   *
-   * @author Jens Schauder
-   * @author Oliver Gierke
-   * @author Mark Paluch
-   * @since 2.0
-   */
   private static class BasicQueryParameterSetterFactory extends QueryParameterSetterFactory {
 
     private final ReactiveJpaParameters parameters;
 
-    /**
-     * @param parameters must not be {@literal null}.
-     */
     BasicQueryParameterSetterFactory(ReactiveJpaParameters parameters) {
 
       Assert.notNull(parameters, "JpaParameters must not be null");
@@ -247,23 +190,11 @@ public abstract class QueryParameterSetterFactory {
     }
   }
 
-  /**
-   * @author Jens Schauder
-   * @author Oliver Gierke
-   * @see QueryParameterSetterFactory
-   */
   private static class CriteriaQueryParameterSetterFactory extends QueryParameterSetterFactory {
 
     private final ReactiveJpaParameters parameters;
     private final List<ParameterMetadataProvider.ParameterMetadata<?>> parameterMetadata;
 
-    /**
-     * Creates a new {@link QueryParameterSetterFactory} from the given {@link
-     * ReactiveJpaParameters} and {@link ParameterMetadataProvider.ParameterMetadata}.
-     *
-     * @param parameters must not be {@literal null}.
-     * @param metadata must not be {@literal null}.
-     */
     CriteriaQueryParameterSetterFactory(
         ReactiveJpaParameters parameters,
         List<ParameterMetadataProvider.ParameterMetadata<?>> metadata) {
@@ -322,15 +253,6 @@ public abstract class QueryParameterSetterFactory {
     private final ParameterBinding.BindingIdentifier identifier;
     private final Class<T> parameterType;
 
-    /**
-     * Creates a new {@link QueryParameterSetterFactory.ParameterImpl} for the given {@link
-     * ReactiveJpaParameters.JpaParameter} and {@link ParameterBinding}.
-     *
-     * @param parameter can be {@literal null}.
-     * @param binding must not be {@literal null}.
-     * @return a {@link jakarta.persistence.Parameter} object based on the information from the
-     *     arguments.
-     */
     static jakarta.persistence.Parameter<?> of(
         @Nullable ReactiveJpaParameters.JpaParameter parameter, ParameterBinding binding) {
 

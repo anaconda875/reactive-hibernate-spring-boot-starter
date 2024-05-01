@@ -25,13 +25,6 @@ import reactor.core.publisher.Mono;
 public class SimpleReactiveJpaRepository<T, ID>
     implements ReactiveJpaRepositoryImplementation<T, ID> {
 
-  //  private final JpaEntityInformation<T, ?> entityInformation;
-  //  private final Mutiny.SessionFactory sessionFactory;
-  //
-  //  private final ClassLoader classLoader;
-
-  //  private final InternalRepository delegating;
-
   public static <T, ID> ReactiveJpaRepositoryImplementation<T, ID> createInstance(
       JpaEntityInformation<T, ?> entityInformation,
       Mutiny.SessionFactory sessionFactory,
@@ -39,35 +32,9 @@ public class SimpleReactiveJpaRepository<T, ID>
     SimpleReactiveJpaRepository<T, ID> instance =
         new InternalRepository<>(entityInformation, sessionFactory /*, classLoader*/);
     ProxyFactory proxyFactory = new ProxyFactory(instance);
-    //    proxyFactory.setInterfaces(SessionAwareReactiveJpaRepositoryImplementation.class);
-    //    proxyFactory.
 
     return (ReactiveJpaRepositoryImplementation<T, ID>) proxyFactory.getProxy(classLoader);
   }
-
-  /* private SimpleReactiveJpaRepository(
-  JpaEntityInformation<T, ?> entityInformation */
-  /*, Mutiny.SessionFactory sessionFactory*/
-  /*,
-      ClassLoader classLoader) {
-    this.sessionFactory = null;
-    this.entityInformation = entityInformation;
-    this.classLoader = classLoader;
-    delegating = new InternalRepository();
-  }*/
-
-  /*  private SimpleReactiveJpaRepository() {
-    entityInformation = null;
-    sessionFactory = null;
-    classLoader = null;
-    delegating = null;
-  }*/
-
-  //  @Override
-  //  public Uni<T> findById(ID id) {
-  //    return sessionFactory.withSession(session -> session.find(entityInformation.getJavaType(),
-  // id));
-  //  }
 
   @Override
   public <S extends T> Flux<S> findAll() {
@@ -76,8 +43,6 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   @Override
   public <S extends T> Mono<S> findById(ID id) {
-    //    return toWrapper(sessionFactory.withSession(session ->
-    // session.find(entityInformation.getJavaType(), id)), Mono.class);
     return Mono.empty();
   }
 

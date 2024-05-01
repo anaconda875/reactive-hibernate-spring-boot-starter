@@ -47,7 +47,6 @@ public class StringQuery implements DeclaredQuery {
     this.hasConstructorExpression = this.queryEnhancer.hasConstructorExpression();
   }
 
-  /** Returns whether we have found some like bindings. */
   boolean hasParameterBindings() {
     return !bindings.isEmpty();
   }
@@ -113,11 +112,6 @@ public class StringQuery implements DeclaredQuery {
     return usesJdbcStyleParameters;
   }
 
-  /**
-   * A parser that extracts the parameter bindings from a given query string.
-   *
-   * @author Thomas Darimont
-   */
   enum ParameterBindingParser {
     INSTANCE;
 
@@ -177,10 +171,6 @@ public class StringQuery implements DeclaredQuery {
       PARAMETER_BINDING_PATTERN = Pattern.compile(builder.toString(), CASE_INSENSITIVE);
     }
 
-    /**
-     * Parses {@link ParameterBinding} instances from the given query and adds them to the
-     * registered bindings. Returns the cleaned up query.
-     */
     private String parseParameterBindingsOfQueryIntoBindingsAndReturnCleanedQuery(
         String query, List<ParameterBinding> bindings, StringQuery.Metadata queryMeta) {
 
@@ -380,12 +370,6 @@ public class StringQuery implements DeclaredQuery {
       }
     }
 
-    /**
-     * An enum for the different types of bindings.
-     *
-     * @author Thomas Darimont
-     * @author Oliver Gierke
-     */
     private enum ParameterBindingType {
 
       // Trailing whitespace is intentional to reflect that the keywords must be used with at least
@@ -401,22 +385,11 @@ public class StringQuery implements DeclaredQuery {
         this.keyword = keyword;
       }
 
-      /**
-       * Returns the keyword that will trigger the binding type or {@literal null} if the type is
-       * not triggered by a keyword.
-       *
-       * @return the keyword
-       */
       @Nullable
       public String getKeyword() {
         return keyword;
       }
 
-      /**
-       * Return the appropriate {@link StringQuery.ParameterBindingParser.ParameterBindingType} for
-       * the given {@link String}. Returns {@literal #AS_IS} in case no other {@link
-       * StringQuery.ParameterBindingParser.ParameterBindingType} could be found.
-       */
       static StringQuery.ParameterBindingParser.ParameterBindingType of(String typeSource) {
 
         if (!StringUtils.hasText(typeSource)) {
@@ -439,14 +412,6 @@ public class StringQuery implements DeclaredQuery {
     private boolean usesJdbcStyleParameters = false;
   }
 
-  /**
-   * Utility to create unique parameter bindings for LIKE that refer to the same underlying method
-   * parameter but are bound to potentially unique query parameters for {@link
-   * ParameterBinding.LikeParameterBinding#prepare(Object) LIKE rewrite}.
-   *
-   * @author Mark Paluch
-   * @since 3.1.2
-   */
   static class ParameterBindings {
 
     private final MultiValueMap<ParameterBinding.BindingIdentifier, ParameterBinding>
@@ -469,12 +434,6 @@ public class StringQuery implements DeclaredQuery {
       this.syntheticParameterIndex = syntheticParameterIndex;
     }
 
-    /**
-     * Return whether the identifier is already bound.
-     *
-     * @param identifier
-     * @return
-     */
     public boolean isBound(ParameterBinding.BindingIdentifier identifier) {
       return !getBindings(identifier).isEmpty();
     }
