@@ -13,4 +13,6 @@
 
 This is an example of how to use it (with Postgres): https://github.com/anaconda875/spring-hibernate-reactive-mutiny-example
 
+Note: For Jdk 17 or up, add this VM option:  ```--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED```
+
 If you guys find it useful for our business, feel free to use and report bugs to me
