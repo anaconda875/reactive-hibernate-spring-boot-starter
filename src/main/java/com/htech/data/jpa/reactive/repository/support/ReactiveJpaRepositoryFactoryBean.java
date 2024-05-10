@@ -2,11 +2,13 @@ package com.htech.data.jpa.reactive.repository.support;
 
 import static com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryExecutionConverters.getDefaultConversionService;
 import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
+import static org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction;
 
 import com.htech.data.jpa.reactive.core.ReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.DefaultReactiveJpaQueryExtractor;
 import com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryMethodFactory;
 import com.htech.data.jpa.reactive.repository.query.ReactiveQueryRewriterProvider;
+import com.htech.jpa.reactive.connection.ConnectionHolder;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.EntityManagerFactory;
 import java.io.Serializable;
@@ -17,12 +19,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.mutiny.impl.MutinySessionImpl;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
@@ -56,6 +58,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public class ReactiveJpaRepositoryFactoryBean<
         T extends Repository<S, ID>, S, ID extends Serializable>
@@ -92,7 +95,7 @@ public class ReactiveJpaRepositoryFactoryBean<
 
     //    RepositoryMetadata repositoryMetadata = factory.getRepositoryMetadata(getObjectType());
     factory.addRepositoryProxyPostProcessor(new ValueAdapterInterceptorProxyPostProcessor());
-    factory.addRepositoryProxyPostProcessor(new TransactionInterceptorProxyPostProcessor());
+    factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());
 
     return factory;
   }
@@ -171,23 +174,24 @@ public class ReactiveJpaRepositoryFactoryBean<
         Class<?> paramClass = componentType == null ? Object.class : componentType.getType();
 
         return conversionService.convert(obj, TypeDescriptor.forObject(obj));
+        //        return converted.doOnError(e -> System.out.println("ngoai cung"));
       }
     }
   }
 
-  class TransactionInterceptorProxyPostProcessor implements RepositoryProxyPostProcessor {
+  class SessionAwareProxyPostProcessor implements RepositoryProxyPostProcessor {
 
     @Override
     public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
-      factory.addAdvice(new TransactionInterceptor(repositoryInformation));
+      factory.addAdvice(new SessionAwareInterceptor(repositoryInformation));
     }
 
-    class TransactionInterceptor implements MethodInterceptor {
+    class SessionAwareInterceptor implements MethodInterceptor {
 
       protected final RepositoryInformation repositoryInformation;
       protected final TransactionAttributeSource tas;
 
-      protected TransactionInterceptor(RepositoryInformation repositoryInformation) {
+      protected SessionAwareInterceptor(RepositoryInformation repositoryInformation) {
         this.repositoryInformation = repositoryInformation;
         this.tas =
             new CustomRepositoryAnnotationTransactionAttributeSource(repositoryInformation, true);
@@ -197,16 +201,18 @@ public class ReactiveJpaRepositoryFactoryBean<
       public Object invoke(MethodInvocation invocation) throws Throwable {
         //        Uni<Mutiny.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
         //            .entityOperations.getSessionFactory().openSession();
-        TransactionAttributeSource tas = getTransactionAttributeSource();
-        Class<?> targetClass =
-            (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
-        final TransactionAttribute txAttr =
-            (tas != null ? tas.getTransactionAttribute(invocation.getMethod(), targetClass) : null);
+        //        TransactionAttributeSource tas = getTransactionAttributeSource();
+        //        Class<?> targetClass =
+        //            (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis())
+        // : null);
+        //        final TransactionAttribute txAttr =
+        //            (tas != null ? tas.getTransactionAttribute(invocation.getMethod(),
+        // targetClass) : null);
 
         Object[] arguments = invocation.getArguments();
         Object[] newArgs = Arrays.copyOf(arguments, arguments.length + 2);
 
-        if (noTransaction(txAttr)) {
+        /*if (noTransaction(txAttr)) {
           return toWrapper(
               ReactiveJpaRepositoryFactoryBean.this
                   .entityOperations
@@ -226,77 +232,208 @@ public class ReactiveJpaRepositoryFactoryBean<
                         }
                       }),
               invocation.getMethod().getReturnType());
-        } else {
-          AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
-          AtomicBoolean flag = new AtomicBoolean(false);
-          Uni uni =
-              ReactiveJpaRepositoryFactoryBean.this
-                  .entityOperations
-                  .getSessionFactory()
-                  .withTransaction(
-                      (session, transaction) -> {
-                        try {
-                          prepareInvocation(
-                              (ReflectiveMethodInvocation) invocation,
-                              newArgs,
-                              session,
-                              transaction);
-                          Object proceeded = invocation.proceed();
-                          Uni tmp;
-                          if (proceeded instanceof Uni<?> u) {
-                            tmp = u;
-                          } else {
-                            tmp = toWrapper(proceeded, Uni.class);
-                          }
+        } else {*/
+        //          AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
+        //          AtomicBoolean flag = new AtomicBoolean(false);
+        Uni<MutinySessionImpl> uni =
+            ReactiveJpaRepositoryFactoryBean.this
+                .entityOperations
+                .getSessionFactory()
+                .openSession()
+                .map(MutinySessionImpl.class::cast)
+            /*.flatMap(s -> {
+              try {
+                prepareInvocation((ReflectiveMethodInvocation) invocation, newArgs, s, null);
+                return Uni.createFrom().item(s);
+              } catch (Exception e) {
+                return Uni.createFrom().failure(e);
+              }
+            })*/ ;
 
-                          return tmp.onFailure(
-                                  throwable -> {
-                                    boolean rollback = txAttr.rollbackOn((Throwable) throwable);
-                                    throwableAtomicReference.set((Throwable) throwable);
-                                    if (rollback) {
-                                      transaction.markForRollback();
-                                    } else {
-                                      flag.set(Boolean.TRUE);
-                                    }
-                                    return !rollback;
-                                  })
-                              .recoverWithNull();
-                        } catch (Throwable e) {
-                          if (txAttr.rollbackOn(e)) {
-                            transaction.markForRollback();
-                          }
-                          return Uni.createFrom().failure(new RuntimeException(e.getMessage(), e));
+        Mono<Object> filter =
+            forCurrentTransaction()
+                .mapNotNull(
+                    tsm ->
+                        tsm.getResource(
+                            ReactiveJpaRepositoryFactoryBean.this.entityOperations
+                                .getSessionFactory()))
+                .filter(ConnectionHolder.class::isInstance)
+                .onErrorResume(e -> Mono.empty())
+                .cache();
+
+        Mono<Boolean> transactionExists =
+            filter.map(Objects::nonNull).defaultIfEmpty(Boolean.FALSE);
+
+        Mono<MutinySessionImpl> session =
+            filter
+                .map(ConnectionHolder.class::cast)
+                .map(ConnectionHolder::getConnection)
+                .switchIfEmpty(
+                    Mono.defer(() -> (Mono<MutinySessionImpl>) toWrapper(uni, Mono.class)))
+                .flatMap(
+                    s -> {
+                      try {
+                        prepareInvocation(
+                            (ReflectiveMethodInvocation) invocation, newArgs, s, null);
+                        return Mono.just(s);
+                      } catch (Exception e) {
+                        return Mono.error(e);
+                      }
+                    });
+        //          Mono<MutinySessionImpl> sessionCached = session.cache();
+
+        /*return Mono.usingWhen(sessionCached
+         */
+        /*.flatMap(s -> Mono.fromCompletionStage(s.getReactiveConnection().beginTransaction()).thenReturn(s))*/
+        /*,
+        s -> {
+          //In case of SimpleReactiveRepository, proceeded is Uni type, then adapt to Mono
+          //In case of custom UPDATE, custom COUNT (Transactional) or PartTree DELETE, proceeded is Mono<Long> or Mono<Integer>
+          //or Uni<Long> or Uni<Integer> (as supporting multiple Reactive libs)
+          //then adapt to Mono
+          Object proceeded;
+          try {
+            proceeded = invocation.proceed();
+          } catch (Throwable throwable) {
+            proceeded = Mono.error(throwable);
+          }
+
+          //TODO: In case of SELECT Flux (Transactional), must adapt from Flux to Mono<List<?>>, re-check later
+          if(proceeded instanceof Flux<?> f) {
+            proceeded = f.collectList();
+          } else {
+            proceeded = toWrapper(proceeded, Mono.class);
+          }
+
+          return (Mono<?>) proceeded;
+        },
+        s -> Mono.fromCompletionStage(s.getReactiveConnection().commitTransaction()),
+        (tuple2, throwable) -> Mono.empty(),
+        s -> Mono.fromCompletionStage(s.getReactiveConnection().rollbackTransaction()))
+        .onErrorResume(ex -> {
+          if(txAttr.rollbackOn(ex)) {
+            return sessionCached.flatMap(s -> Mono.fromCompletionStage(s.getReactiveConnection().rollbackTransaction()))
+                .then(Mono.error(ex));
+          } else {
+            return sessionCached.flatMap(s -> Mono.fromCompletionStage(s.getReactiveConnection().commitTransaction()))
+                .then(Mono.error(ex));
+          }
+        });*/
+
+        return toWrapper(
+            session
+                .flatMap(
+                    s -> {
+                      // In case of SimpleReactiveRepository, proceeded is Uni type, then adapt to
+                      // Mono
+                      // In case of custom UPDATE, custom COUNT (Transactional) or PartTree DELETE,
+                      // proceeded is Mono<Long> or Mono<Integer>
+                      // or Uni<Long> or Uni<Integer> (as supporting multiple Reactive libs)
+                      // then adapt to Mono
+                      Object proceeded;
+                      try {
+                        proceeded = invocation.proceed();
+                      } catch (Throwable throwable) {
+                        proceeded = Mono.error(throwable);
+                      }
+
+                      // TODO: In case of SELECT Flux (Transactional), must adapt from Flux to
+                      // Mono<List<?>>, re-check later
+                      // Uni<List> will be converted to Mono<List>, then go to Flux.usingWhen -->
+                      // Flux<List>
+                      /*if(proceeded instanceof Flux<?> f) {
+                        proceeded = f.collectList();
+                      } else {*/
+                      proceeded = toWrapper(proceeded, Mono.class);
+                      /*}*/
+
+                      return (Mono<?>) proceeded;
+                    })
+                .flatMap(
+                    r ->
+                        transactionExists.flatMap(
+                            b -> {
+                              if (b) {
+                                return Mono.just(r);
+                              }
+                              return session
+                                  .flatMap(
+                                      s ->
+                                          Mono.fromCompletionStage(
+                                              s.getReactiveConnection().close()))
+                                  .thenReturn(r);
+                            }))
+                .onErrorResume(
+                    e ->
+                        transactionExists.flatMap(
+                            b -> {
+                              if (b) {
+                                return Mono.error(e);
+                              }
+                              return session
+                                  .flatMap(
+                                      s ->
+                                          Mono.fromCompletionStage(
+                                              s.getReactiveConnection().close()))
+                                  .then(Mono.error(e));
+                            })),
+            invocation.getMethod().getReturnType());
+
+        //          uni = uni.
+
+        /*.withTransaction(
+                    (session, transaction) -> {
+                      try {
+                        prepareInvocation(
+                            (ReflectiveMethodInvocation) invocation,
+                            newArgs,
+                            session,
+                            transaction);
+                        Object proceeded = invocation.proceed();
+                        Uni tmp;
+                        if (proceeded instanceof Uni<?> u) {
+                          tmp = u;
+                        } else {
+                          tmp = toWrapper(proceeded, Uni.class);
                         }
-                      });
-          //          Throwable throwable = throwableAtomicReference.get();
-          //          if(throwable != null) {
-          uni =
-              uni.onItem()
-                  .ifNull()
-                  .switchTo(
-                      () -> {
-                        if (flag.get()) {
-                          return Uni.createFrom().failure(throwableAtomicReference::get);
+
+                        return tmp.onFailure(
+                                throwable -> {
+                                  boolean rollback = txAttr.rollbackOn((Throwable) throwable);
+                                  throwableAtomicReference.set((Throwable) throwable);
+                                  if (rollback) {
+                                    transaction.markForRollback();
+                                  } else {
+                                    flag.set(Boolean.TRUE);
+                                  }
+                                  return !rollback;
+                                })
+                            .recoverWithNull();
+                      } catch (Throwable e) {
+                        if (txAttr.rollbackOn(e)) {
+                          transaction.markForRollback();
                         }
-                        return Uni.createFrom().nullItem();
-                      });
-          //          }
-          return toWrapper(uni, invocation.getMethod().getReturnType());
-        }
+                        return Uni.createFrom().failure(new RuntimeException(e.getMessage(), e));
+                      }
+                    });
+        uni =
+            uni.onItem()
+                .ifNull()
+                .switchTo(
+                    () -> {
+                      if (flag.get()) {
+                        return Uni.createFrom().failure(throwableAtomicReference::get);
+                      }
+                      return Uni.createFrom().nullItem();
+                    });
+        return toWrapper(uni, invocation.getMethod().getReturnType());*/
+        //        }
 
-        //        Object[] arguments = invocation.getArguments();
-        //        Object[] newArgs = Arrays.copyOf(arguments, arguments.length + 1);
-        //        newArgs[newArgs.length - 1] = null;
-        //        newArgs[newArgs.length - 1] = sessionUni;
-        //        prepareInvocation((ReflectiveMethodInvocation) invocation, newArgs, session,
-        // transaction);
-
-        //        return invocation.proceed();
       }
 
-      public TransactionAttributeSource getTransactionAttributeSource() {
+      /*public TransactionAttributeSource getTransactionAttributeSource() {
         return this.tas;
-      }
+      }*/
 
       private void prepareInvocation(
           ReflectiveMethodInvocation invocation,
