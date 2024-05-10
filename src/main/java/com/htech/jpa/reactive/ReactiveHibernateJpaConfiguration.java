@@ -3,6 +3,7 @@ package com.htech.jpa.reactive;
 import static org.hibernate.cfg.TransactionSettings.JTA_PLATFORM;
 
 import com.htech.jpa.pu.CustomPersistenceUnitManager;
+import com.htech.jpa.reactive.connection.ReactiveHibernateTransactionManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.transaction.*;
 import java.util.ArrayList;
@@ -100,7 +101,6 @@ public class ReactiveHibernateJpaConfiguration {
   // customizers.customize(transactionManager));
   //    return transactionManager;
   //  }
-
   @Bean
   @ConditionalOnMissingBean
   public JpaVendorAdapter jpaVendorAdapter() {
@@ -168,6 +168,12 @@ public class ReactiveHibernateJpaConfiguration {
   @Bean
   public Mutiny.SessionFactory sessionFactory(EntityManagerFactory emf) {
     return emf.unwrap(Mutiny.SessionFactory.class);
+  }
+
+  @Bean
+  public org.springframework.transaction.TransactionManager transactionManager(
+      Mutiny.SessionFactory sessionFactory) {
+    return new ReactiveHibernateTransactionManager(sessionFactory);
   }
 
   private String[] getMappingResources() {

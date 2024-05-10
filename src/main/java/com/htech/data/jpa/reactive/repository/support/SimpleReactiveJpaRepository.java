@@ -325,9 +325,13 @@ public class SimpleReactiveJpaRepository<T, ID>
           .transformToUni(
               e -> {
                 if (session.contains(e)) {
-                  return session.remove(e);
+                  return session.remove(e).chain(session::flush);
                 }
-                return session.merge(e).onItem().transformToUni(session::remove);
+                return session
+                    .merge(e)
+                    .onItem()
+                    .transformToUni(session::remove)
+                    .chain(session::flush);
               });
       /*return session.refresh(entity).chain(() -> {
         if(session.contains(entity)) {
