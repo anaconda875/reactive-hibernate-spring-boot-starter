@@ -1,6 +1,7 @@
 package com.htech.data.jpa.reactive.repository.support;
 
 import static org.springframework.data.jpa.repository.query.QueryUtils.*;
+import static reactor.core.scheduler.Schedulers.DEFAULT_POOL_SIZE;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.criteria.*;
@@ -18,6 +19,7 @@ import org.springframework.data.jpa.support.PageableUtils;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -149,8 +151,19 @@ public class SimpleReactiveJpaRepository<T, ID>
   static class InternalRepository<T, ID> extends SimpleReactiveJpaRepository<T, ID>
       implements SessionAwareReactiveJpaRepositoryImplementation<T, ID> {
 
+    private static final ThreadPoolTaskExecutor EXECUTOR;
+
     private final JpaEntityInformation<T, ?> entityInformation;
     private final Mutiny.SessionFactory sessionFactory;
+
+    static {
+      EXECUTOR = new ThreadPoolTaskExecutor();
+      EXECUTOR.setCorePoolSize(DEFAULT_POOL_SIZE);
+      EXECUTOR.setMaxPoolSize(DEFAULT_POOL_SIZE * 2);
+      //        EXECUTOR.setQueueCapacity(1000);
+      EXECUTOR.setThreadNamePrefix("custom-parallel-");
+      EXECUTOR.initialize();
+    }
 
     InternalRepository(
         JpaEntityInformation<T, ?> entityInformation, Mutiny.SessionFactory sessionFactory) {
@@ -173,13 +186,23 @@ public class SimpleReactiveJpaRepository<T, ID>
       //      return
       // toWrapper(session.find(SimpleReactiveJpaRepository.this.entityInformation.getJavaType(),
       // id), Mono.class);
-      return session.find(entityInformation.getJavaType(), id).onItem().transform(e -> (S) e);
+      return session
+          .find(entityInformation.getJavaType(), id)
+          .onItem()
+          .transform(e -> (S) e)
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public <S extends T> Uni<S> save(
         S entity, Mutiny.Session session, Mutiny.Transaction transaction) {
-      return session.persist(entity).chain(session::flush).replaceWith(entity);
+      return session
+          .persist(entity)
+          .chain(session::flush)
+          .replaceWith(entity)
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
       //      return Uni.createFrom().item(entity);
     }
 
@@ -187,12 +210,17 @@ public class SimpleReactiveJpaRepository<T, ID>
     public <S extends T> Uni<List<S>> saveAll(
         Iterable<S> entities, Mutiny.Session session, Mutiny.Transaction transaction) {
       if (IterableUtils.isEmpty(entities)) {
-        return Uni.createFrom().nullItem();
+        return Uni.createFrom().<List<S>>nullItem().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       }
 
       List<S> list = IterableUtils.toList(entities);
-      return session.persistAll(list.toArray()).chain(session::flush).replaceWith(list) /*
-          .onItem().transformToMulti(Multi.createFrom()::iterable)*/;
+      return session
+          .persistAll(list.toArray())
+          .chain(session::flush)
+          .replaceWith(list) /*
+          .onItem().transformToMulti(Multi.createFrom()::iterable)*/
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
@@ -203,7 +231,9 @@ public class SimpleReactiveJpaRepository<T, ID>
             .transform(Objects::nonNull)
             .onItem()
             .ifNull()
-            .continueWith(Boolean.FALSE);
+            .continueWith(Boolean.FALSE)
+            .emitOn(EXECUTOR)
+            .runSubscriptionOn(EXECUTOR);
       }
 
       String placeholder = "*";
@@ -224,7 +254,9 @@ public class SimpleReactiveJpaRepository<T, ID>
             .ifNull()
             .continueWith(0L)
             .onItem()
-            .transform(l -> l.equals(1L));
+            .transform(l -> l.equals(1L))
+            .emitOn(EXECUTOR)
+            .runSubscriptionOn(EXECUTOR);
       }
 
       for (String idAttributeName : idAttributeNames) {
@@ -243,7 +275,9 @@ public class SimpleReactiveJpaRepository<T, ID>
               .transform(Objects::nonNull)
               .onItem()
               .ifNull()
-              .continueWith(Boolean.FALSE);
+              .continueWith(Boolean.FALSE)
+              .emitOn(EXECUTOR)
+              .runSubscriptionOn(EXECUTOR);
         }
 
         query.setParameter(idAttributeName, idAttributeValue);
@@ -255,14 +289,19 @@ public class SimpleReactiveJpaRepository<T, ID>
           .ifNull()
           .continueWith(0L)
           .onItem()
-          .transform(l -> l.equals(1L));
+          .transform(l -> l.equals(1L))
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public <S extends T> Uni<List<S>> findAllById(
         Iterable<ID> ids, Mutiny.Session session, Mutiny.Transaction transaction) {
       if (IterableUtils.isEmpty(ids)) {
-        return Uni.createFrom().item(Collections.emptyList());
+        return Uni.createFrom()
+            .item(Collections.<S>emptyList())
+            .emitOn(EXECUTOR)
+            .runSubscriptionOn(EXECUTOR);
       }
 
       // IllegalStateException: Illegal pop() with non-matching JdbcValuesSourceProcessingState
@@ -288,7 +327,7 @@ public class SimpleReactiveJpaRepository<T, ID>
                               }));
         }
 
-        return uni;
+        return uni.emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       }
 
       Collection<ID> idCollection = Streamable.of(ids).toList();
@@ -300,7 +339,9 @@ public class SimpleReactiveJpaRepository<T, ID>
           .setParameter(specification.parameter, idCollection)
           .getResultList()
           .onItem()
-          .transform(l -> (List<S>) l);
+          .transform(l -> (List<S>) l)
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
@@ -308,13 +349,13 @@ public class SimpleReactiveJpaRepository<T, ID>
       Mutiny.SelectionQuery<Long> query = session.createQuery(getCountQueryString(), Long.class);
       //      applyQueryHintsForCount(query);
 
-      return query.getSingleResult();
+      return query.getSingleResult().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public Uni<Void> delete(T entity, Mutiny.Session session, Mutiny.Transaction transaction) {
       if (entityInformation.isNew(entity)) {
-        return Uni.createFrom().voidItem();
+        return Uni.createFrom().voidItem().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       }
 
       Class<?> type = ProxyUtils.getUserClass(entity);
@@ -332,12 +373,14 @@ public class SimpleReactiveJpaRepository<T, ID>
                     .onItem()
                     .transformToUni(session::remove)
                     .chain(session::flush);
-              });
+              })
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
       /*return session.refresh(entity).chain(() -> {
         if(session.contains(entity)) {
           return session.remove(entity);
         }
-        return session.merge(entity).chain(session::remove);
+        return session.merge(entity).chain(session::remove).emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       });*/
     }
 
@@ -346,14 +389,16 @@ public class SimpleReactiveJpaRepository<T, ID>
       return findById(id, session, transaction)
           .onItem()
           .ifNotNull()
-          .transformToUni(e -> delete(e, session, transaction));
+          .transformToUni(e -> delete(e, session, transaction))
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public Uni<Void> deleteAllById(
         Iterable<? extends ID> ids, Mutiny.Session session, Mutiny.Transaction transaction) {
       if (IterableUtils.isEmpty(ids)) {
-        return Uni.createFrom().voidItem();
+        return Uni.createFrom().voidItem().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       }
 
       Iterator<? extends ID> iterator = ids.iterator();
@@ -363,14 +408,14 @@ public class SimpleReactiveJpaRepository<T, ID>
         uni = uni.chain(v -> deleteById(id, session, transaction));
       }
 
-      return uni;
+      return uni.emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public Uni<Void> deleteAll(
         Iterable<? extends T> entities, Mutiny.Session session, Mutiny.Transaction transaction) {
       if (IterableUtils.isEmpty(entities)) {
-        return Uni.createFrom().voidItem();
+        return Uni.createFrom().voidItem().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       }
 
       Iterator<? extends T> iterator = entities.iterator();
@@ -380,29 +425,34 @@ public class SimpleReactiveJpaRepository<T, ID>
         uni = uni.chain(v -> delete(next, session, transaction));
       }
 
-      return uni;
+      return uni.emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public Uni<List<T>> findAll(Sort sort, Mutiny.Session session, Mutiny.Transaction transaction) {
-      return getQuery(session, null, sort).getResultList();
+      return getQuery(session, null, sort)
+          .getResultList()
+          .emitOn(EXECUTOR)
+          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
     public Uni<List<T>> findAll(
         Pageable pageable, Mutiny.Session session, Mutiny.Transaction transaction) {
       if (pageable.isUnpaged()) {
-        return findAll(session, transaction);
+        return findAll(session, transaction).emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
       }
 
-      return findAll(session, (Specification<T>) null, pageable);
+      return findAll(session, null, pageable).emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
     }
 
     public Uni<List<T>> findAll(Mutiny.Session session, Specification<T> spec, Pageable pageable) {
       Mutiny.SelectionQuery<T> query = getQuery(session, spec, pageable);
       return pageable.isUnpaged()
-          ? query.getResultList()
-          : readPage(query, entityInformation.getJavaType(), pageable, spec);
+          ? query.getResultList().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR)
+          : readPage(query, entityInformation.getJavaType(), pageable, spec)
+              .emitOn(EXECUTOR)
+              .runSubscriptionOn(EXECUTOR);
     }
 
     private Uni<List<T>> readPage(
@@ -415,7 +465,7 @@ public class SimpleReactiveJpaRepository<T, ID>
         query.setMaxResults(pageable.getPageSize());
       }
 
-      return query.getResultList();
+      return query.getResultList().emitOn(EXECUTOR).runSubscriptionOn(EXECUTOR);
     }
 
     protected Mutiny.SelectionQuery<T> getQuery(
