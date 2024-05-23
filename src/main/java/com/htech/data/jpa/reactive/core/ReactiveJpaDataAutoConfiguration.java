@@ -15,8 +15,8 @@ public class ReactiveJpaDataAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  public ReactiveJpaEntityOperations reactiveJpaEntityTemplate(
+  public MutinyReactiveJpaEntityOperations reactiveJpaEntityTemplate(
       Mutiny.SessionFactory sessionFactory) {
-    return new ReactiveJpaEntityTemplate(sessionFactory);
+    return new MutinyReactiveJpaEntityTemplate(sessionFactory);
   }
 }

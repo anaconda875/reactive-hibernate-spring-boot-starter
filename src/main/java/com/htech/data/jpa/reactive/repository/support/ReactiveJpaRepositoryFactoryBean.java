@@ -4,7 +4,7 @@ import static com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryExecu
 import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
 import static org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction;
 
-import com.htech.data.jpa.reactive.core.ReactiveJpaEntityOperations;
+import com.htech.data.jpa.reactive.core.MutinyReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.DefaultReactiveJpaQueryExtractor;
 import com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryMethodFactory;
 import com.htech.data.jpa.reactive.repository.query.ReactiveQueryRewriterProvider;
@@ -40,6 +40,8 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
+import org.springframework.data.auditing.IsNewAwareAuditingHandler;
+import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
 import org.springframework.data.querydsl.EntityPathResolver;
 import org.springframework.data.querydsl.SimpleEntityPathResolver;
@@ -59,6 +61,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 public class ReactiveJpaRepositoryFactoryBean<
         T extends Repository<S, ID>, S, ID extends Serializable>
@@ -66,7 +69,7 @@ public class ReactiveJpaRepositoryFactoryBean<
     implements ApplicationContextAware, BeanClassLoaderAware {
 
   private @Nullable ApplicationContext applicationContext;
-  private ReactiveJpaEntityOperations entityOperations;
+  private MutinyReactiveJpaEntityOperations entityOperations;
 
   private EntityPathResolver entityPathResolver;
 
@@ -85,7 +88,8 @@ public class ReactiveJpaRepositoryFactoryBean<
   protected RepositoryFactorySupport createRepositoryFactory() {
     ReactiveJpaRepositoryFactory factory =
         new ReactiveJpaRepositoryFactory(
-            entityOperations.getSessionFactory(),
+            entityOperations,
+            entityOperations.sessionFactory(),
             applicationContext.getBean("entityManagerFactory", EntityManagerFactory.class));
     factory.setEscapeCharacter(escapeCharacter);
     // TODO
@@ -198,7 +202,9 @@ public class ReactiveJpaRepositoryFactoryBean<
       }
 
       @Override
+      @SuppressWarnings("unchecked")
       public Object invoke(MethodInvocation invocation) throws Throwable {
+        ReactiveAuditorAware<String> bean = applicationContext.getBean(ReactiveAuditorAware.class);
         //        Uni<Mutiny.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
         //            .entityOperations.getSessionFactory().openSession();
         //        TransactionAttributeSource tas = getTransactionAttributeSource();
@@ -238,7 +244,7 @@ public class ReactiveJpaRepositoryFactoryBean<
         Uni<MutinySessionImpl> uni =
             ReactiveJpaRepositoryFactoryBean.this
                 .entityOperations
-                .getSessionFactory()
+                .sessionFactory()
                 .openSession()
                 .map(MutinySessionImpl.class::cast)
             /*.flatMap(s -> {
@@ -256,7 +262,7 @@ public class ReactiveJpaRepositoryFactoryBean<
                     tsm ->
                         tsm.getResource(
                             ReactiveJpaRepositoryFactoryBean.this.entityOperations
-                                .getSessionFactory()))
+                                .sessionFactory()))
                 .filter(ConnectionHolder.class::isInstance)
                 .onErrorResume(e -> Mono.empty())
                 .cache();
@@ -347,7 +353,11 @@ public class ReactiveJpaRepositoryFactoryBean<
                       proceeded = toWrapper(proceeded, Mono.class);
                       /*}*/
 
-                      return (Mono<?>) proceeded;
+                      Mono<?> rt = (Mono<?>) proceeded;
+                      return bean
+                          .getCurrentAuditor()
+                          .flatMap(r -> rt.contextWrite(Context.of("KEY", r)))
+                          .switchIfEmpty((Mono)proceeded);
                     })
                 .flatMap(
                     r ->
@@ -368,14 +378,14 @@ public class ReactiveJpaRepositoryFactoryBean<
                         transactionExists.flatMap(
                             b -> {
                               if (b) {
-                                return Mono.error(e);
+                                return Mono.error((Throwable) e);
                               }
                               return session
                                   .flatMap(
                                       s ->
                                           Mono.fromCompletionStage(
                                               s.getReactiveConnection().close()))
-                                  .then(Mono.error(e));
+                                  .then(Mono.error((Throwable) e));
                             })),
             invocation.getMethod().getReturnType());
 
@@ -634,7 +644,7 @@ public class ReactiveJpaRepositoryFactoryBean<
   }
 
   //  @Autowired
-  public void setEntityOperations(@Nullable ReactiveJpaEntityOperations entityOperations) {
+  public void setEntityOperations(@Nullable MutinyReactiveJpaEntityOperations entityOperations) {
     this.entityOperations = entityOperations;
   }
 

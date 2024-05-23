@@ -3,6 +3,7 @@ package com.htech.data.jpa.reactive.repository.support;
 import static org.springframework.data.jpa.repository.query.QueryUtils.*;
 import static reactor.core.scheduler.Schedulers.DEFAULT_POOL_SIZE;
 
+import com.htech.data.jpa.reactive.core.MutinyReactiveJpaEntityOperations;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.criteria.*;
 import java.io.Serial;
@@ -29,10 +30,11 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   public static <T, ID> ReactiveJpaRepositoryImplementation<T, ID> createInstance(
       JpaEntityInformation<T, ?> entityInformation,
+      MutinyReactiveJpaEntityOperations entityOperations,
       Mutiny.SessionFactory sessionFactory,
       ClassLoader classLoader) {
     SimpleReactiveJpaRepository<T, ID> instance =
-        new InternalRepository<>(entityInformation, sessionFactory /*, classLoader*/);
+        new InternalRepository<>(entityInformation, entityOperations, sessionFactory /*, classLoader*/);
     ProxyFactory proxyFactory = new ProxyFactory(instance);
 
     return (ReactiveJpaRepositoryImplementation<T, ID>) proxyFactory.getProxy(classLoader);
@@ -154,20 +156,21 @@ public class SimpleReactiveJpaRepository<T, ID>
     private static final ThreadPoolTaskExecutor EXECUTOR;
 
     private final JpaEntityInformation<T, ?> entityInformation;
+    private final MutinyReactiveJpaEntityOperations entityOperations;
     private final Mutiny.SessionFactory sessionFactory;
 
     static {
       EXECUTOR = new ThreadPoolTaskExecutor();
       EXECUTOR.setCorePoolSize(DEFAULT_POOL_SIZE);
       EXECUTOR.setMaxPoolSize(DEFAULT_POOL_SIZE * 2);
-      //        EXECUTOR.setQueueCapacity(1000);
       EXECUTOR.setThreadNamePrefix("custom-parallel-");
       EXECUTOR.initialize();
     }
 
     InternalRepository(
-        JpaEntityInformation<T, ?> entityInformation, Mutiny.SessionFactory sessionFactory) {
+        JpaEntityInformation<T, ?> entityInformation, MutinyReactiveJpaEntityOperations entityOperations, Mutiny.SessionFactory sessionFactory) {
       this.entityInformation = entityInformation;
+      this.entityOperations = entityOperations;
       this.sessionFactory = sessionFactory;
     }
 
@@ -183,9 +186,6 @@ public class SimpleReactiveJpaRepository<T, ID>
     @Override
     public <S extends T> Uni<S> findById(
         ID id, Mutiny.Session session, @Nullable Mutiny.Transaction transaction) {
-      //      return
-      // toWrapper(session.find(SimpleReactiveJpaRepository.this.entityInformation.getJavaType(),
-      // id), Mono.class);
       return session
           .find(entityInformation.getJavaType(), id)
           .onItem()
@@ -197,13 +197,13 @@ public class SimpleReactiveJpaRepository<T, ID>
     @Override
     public <S extends T> Uni<S> save(
         S entity, Mutiny.Session session, Mutiny.Transaction transaction) {
-      return session
-          .persist(entity)
-          .chain(session::flush)
-          .replaceWith(entity)
-          .emitOn(EXECUTOR)
-          .runSubscriptionOn(EXECUTOR);
-      //      return Uni.createFrom().item(entity);
+      return entityOperations.persist(entity, session, transaction);
+//      return session
+//          .persist(entity)
+//          .chain(session::flush)
+//          .replaceWith(entity)
+//          .emitOn(EXECUTOR)
+//          .runSubscriptionOn(EXECUTOR);
     }
 
     @Override
