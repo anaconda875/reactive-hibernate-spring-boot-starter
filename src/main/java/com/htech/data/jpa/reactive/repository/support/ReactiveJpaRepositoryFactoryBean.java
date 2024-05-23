@@ -279,7 +279,8 @@ public class ReactiveJpaRepositoryFactoryBean<
                       } catch (Exception e) {
                         return Mono.error(e);
                       }
-                    });
+                    })
+                .cache();
         //          Mono<MutinySessionImpl> sessionCached = session.cache();
 
         /*return Mono.usingWhen(sessionCached
