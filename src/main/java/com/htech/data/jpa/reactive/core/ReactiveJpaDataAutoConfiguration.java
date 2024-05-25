@@ -15,8 +15,8 @@ public class ReactiveJpaDataAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  public ReactiveJpaEntityOperations reactiveJpaEntityTemplate(
+  public StageReactiveJpaEntityOperations reactiveJpaEntityTemplate(
       Stage.SessionFactory sessionFactory) {
-    return new ReactiveJpaEntityTemplate(sessionFactory);
+    return new StageReactiveJpaEntityTemplate(sessionFactory);
   }
 }

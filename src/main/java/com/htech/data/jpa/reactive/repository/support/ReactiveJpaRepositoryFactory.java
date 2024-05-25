@@ -1,18 +1,16 @@
 package com.htech.data.jpa.reactive.repository.support;
 
+import com.htech.data.jpa.reactive.core.StageReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryLookupStrategy;
 import com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryMethodFactory;
 import com.htech.data.jpa.reactive.repository.query.ReactiveQueryRewriterProvider;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.metamodel.Metamodel;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Optional;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
-import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaMetamodelEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaPersistableEntityInformation;
 import org.springframework.data.repository.core.EntityInformation;
@@ -21,11 +19,11 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.util.ReflectionUtils;
 
 public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySupport
     implements BeanClassLoaderAware {
 
+  protected final StageReactiveJpaEntityOperations entityOperations;
   protected final Stage.SessionFactory sessionFactory;
   protected final EntityManagerFactory entityManagerFactory;
   protected ClassLoader classLoader;
@@ -35,7 +33,10 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
   protected ReactiveQueryRewriterProvider queryRewriterProvider;
 
   public ReactiveJpaRepositoryFactory(
-      Stage.SessionFactory sessionFactory, EntityManagerFactory entityManagerFactory) {
+      StageReactiveJpaEntityOperations entityOperations,
+      Stage.SessionFactory sessionFactory,
+      EntityManagerFactory entityManagerFactory) {
+    this.entityOperations = entityOperations;
     this.sessionFactory = sessionFactory;
     this.entityManagerFactory = entityManagerFactory;
   }
@@ -54,11 +55,12 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
   }
 
   @Override
-  protected Object getTargetRepository(RepositoryInformation information) {
+  protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
     EntityInformation<?, Object> entityInformation =
-        getEntityInformation(information.getDomainType());
+        getEntityInformation(repositoryInformation.getDomainType());
     ReactiveJpaRepositoryImplementation<?, ?> repository =
-        getTargetRepositoryViaReflection(information, entityInformation, sessionFactory);
+        getTargetRepositoryViaReflection(
+            repositoryInformation, entityInformation, sessionFactory, entityOperations);
     //
     // repository.setRepositoryMethodMetadata(crudMethodMetadataPostProcessor.getCrudMethodMetadata());
     repository.setEscapeCharacter(escapeCharacter);
@@ -66,22 +68,32 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
     return repository;
   }
 
-  protected ReactiveJpaRepositoryImplementation<?, ?> getTargetRepositoryViaReflection1(
-      RepositoryInformation information, EntityInformation<?, Object> entityInformation)
-      throws InvocationTargetException, IllegalAccessException {
-    Class<?> repositoryBaseClass = information.getRepositoryBaseClass();
-    Method method =
-        ReflectionUtils.findMethod(
-            repositoryBaseClass,
-            "createInstance",
-            JpaEntityInformation.class,
-            Stage.SessionFactory.class,
-            ClassLoader.class);
-    ReflectionUtils.makeAccessible(method);
-
-    return (ReactiveJpaRepositoryImplementation<?, ?>)
-        method.invoke(null, entityInformation, sessionFactory, classLoader);
-  }
+  //  protected ReactiveJpaRepositoryImplementation<?, ?> getTargetRepositoryViaReflection1(
+  //      RepositoryInformation repositoryInformation, EntityInformation<?, Object>
+  // entityInformation) {
+  //    Class<?> repositoryBaseClass = repositoryInformation.getRepositoryBaseClass();
+  //
+  //    return Optional.ofNullable(ReflectionUtils.findMethod(
+  //            repositoryBaseClass,
+  //            "createInstance",
+  //            JpaEntityInformation.class,
+  //            StageReactiveJpaEntityOperations.class,
+  //            Stage.SessionFactory.class,
+  //            ClassLoader.class))
+  //        .map(m -> {
+  //          ReflectionUtils.makeAccessible(m);
+  //          try {
+  //            return (ReactiveJpaRepositoryImplementation<?, ?>)
+  //                m.invoke(null, entityInformation, entityOperations, sessionFactory,
+  // classLoader);
+  //          } catch (IllegalAccessException | InvocationTargetException e) {
+  //            throw new RuntimeException(e.getMessage(), e);
+  //          }
+  //        }).orElseThrow(() -> new RuntimeException("Method createInstance is not found"));
+  //
+  ////    return (ReactiveJpaRepositoryImplementation<?, ?>)
+  ////        method.invoke(null, entityInformation, sessionFactory, classLoader);
+  //  }
 
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
