@@ -2,7 +2,7 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.repository.query.*;
 import org.springframework.lang.Nullable;
 
@@ -23,7 +23,7 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
   //  private final DeclaredQuery declaredQuery;
   private final QueryParameterSetter.QueryMetadataCache metadataCache;
 
-  private NamedQuery(ReactiveJpaQueryMethod method, Mutiny.SessionFactory sessionFactory) {
+  private NamedQuery(ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory) {
 
     super(method, sessionFactory);
 
@@ -68,7 +68,7 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
   }
 
   // TODO
-  /* static boolean hasNamedQuery(Mutiny.SessionFactory em, String queryName) {
+  /* static boolean hasNamedQuery(Stage.SessionFactory em, String queryName) {
     try {
       em.createNamedQuery(queryName);
       return true;
@@ -84,7 +84,7 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
 
   @Nullable
   public static RepositoryQuery lookupFrom(
-      ReactiveJpaQueryMethod method, Mutiny.SessionFactory sessionFactory) {
+      ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory) {
 
     final String queryName = method.getNamedQueryName();
 
@@ -114,35 +114,39 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
     }
   }
 
-  private static boolean hasNamedQuery(Mutiny.SessionFactory sessionFactory, String queryName) {
+  private static boolean hasNamedQuery(Stage.SessionFactory sessionFactory, String queryName) {
     // TODO: important
     return false;
   }
 
   @Override
-  protected Mutiny.AbstractQuery doCreateQuery(
-      ReactiveJpaParametersParameterAccessor accessor, ReactiveJpaQueryMethod method) {
+  protected Stage.AbstractQuery doCreateQuery(
+      ReactiveJpaParametersParameterAccessor accessor,
+      ReactiveJpaQueryMethod method,
+      Stage.Session session) {
     ReactiveJpaQueryMethod queryMethod = getQueryMethod();
     ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
     Class<?> typeToRead = getTypeToRead(processor.getReturnedType());
 
-    Mutiny.AbstractQuery query = /*typeToRead == null //
+    Stage.AbstractQuery query = /*typeToRead == null //
         ? em.createNamedQuery(queryName) //
         : em.createNamedQuery(queryName, typeToRead);*/ null;
 
     QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(queryName, query);
 
     return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
+    // TODO
+    //    return Mono.empty();
   }
 
   @Override
-  protected Mutiny.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor) {
+  protected Stage.AbstractQuery doCreateCountQuery(
+      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
 
-    Mutiny.AbstractQuery countQuery = null;
-
-    String cacheKey = "";
+    //    Stage.AbstractQuery countQuery = null;
+    //
+    //    String cacheKey = "";
     /*if (namedCountQueryIsPresent) {
       cacheKey = countQueryName;
       countQuery = em.createNamedQuery(countQueryName, Long.class);
@@ -155,9 +159,12 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
     //      countQuery = em.createQuery(countQueryString, Long.class);
     //    }
 
-    QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(cacheKey, countQuery);
-
-    return parameterBinder.get().bind(countQuery, metadata, accessor);
+    //    QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(cacheKey,
+    // countQuery);
+    //
+    //    return parameterBinder.get().bind(countQuery, metadata, accessor);
+    // TODO
+    return null;
   }
 
   @Override

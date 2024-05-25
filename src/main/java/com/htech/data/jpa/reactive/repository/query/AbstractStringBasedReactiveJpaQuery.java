@@ -1,10 +1,9 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.QueryRewriter;
-import org.springframework.data.jpa.repository.query.*;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ReturnedType;
@@ -25,7 +24,7 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
 
   public AbstractStringBasedReactiveJpaQuery(
       ReactiveJpaQueryMethod method,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
@@ -63,20 +62,42 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
   }
 
   @Override
-  public Mutiny.AbstractQuery doCreateQuery(
-      ReactiveJpaParametersParameterAccessor accessor, ReactiveJpaQueryMethod method) {
-
+  public Stage.AbstractQuery doCreateQuery(
+      ReactiveJpaParametersParameterAccessor accessor,
+      ReactiveJpaQueryMethod method,
+      Stage.Session session) {
     String sortedQueryString =
-        QueryEnhancerFactory.forQuery(query) //
-            .applySorting(accessor.getSort(), query.getAlias());
+        QueryEnhancerFactory.forQuery(query).applySorting(accessor.getSort(), query.getAlias());
+
+    /*return Mono.zip(Mono.fromSupplier(() -> QueryEnhancerFactory.forQuery(query)
+            .applySorting(accessor.getSort(), query.getAlias())),
+        Mono.fromSupplier(() -> getQueryMethod().getResultProcessor().withDynamicProjection(accessor))
+    ).flatMap(tuple2 -> {
+      String sortedQueryString = tuple2.getT1();
+      ResultProcessor processor = tuple2.getT2();
+
+      return createReactiveJpaQuery(
+          sortedQueryString,
+          method,
+          session,
+          accessor.getSort(),
+          accessor.getPageable(),
+          processor.getReturnedType())
+          .zipWhen(query -> Mono.fromSupplier(() -> metadataCache.getMetadata(sortedQueryString, query)));
+    }).map(tuple2 -> {
+      Stage.AbstractQuery query = tuple2.getT1();
+      QueryParameterSetter.QueryMetadata metadata = tuple2.getT2();
+      return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
+    });*/
+
     ResultProcessor processor =
         getQueryMethod().getResultProcessor().withDynamicProjection(accessor);
 
-    Mutiny.AbstractQuery query =
+    Stage.AbstractQuery query =
         createReactiveJpaQuery(
             sortedQueryString,
             method,
-            accessor.getSession(),
+            session,
             accessor.getSort(),
             accessor.getPageable(),
             processor.getReturnedType());
@@ -98,12 +119,35 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
   }
 
   @Override
-  protected Mutiny.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor) {
-    Mutiny.Session session = accessor.getSession();
+  protected Stage.AbstractQuery doCreateCountQuery(
+      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
+    /*return session
+    .map(
+        s -> {
+          String queryString = countQuery.get().getQueryString();
+          Stage.SelectionQuery<?> query =
+              getQueryMethod().isNativeQuery() //
+                  ? s.createNativeQuery(queryString) //
+                  : s.createQuery(queryString, Long.class);
+
+          return Tuples.of(query, metadataCache.getMetadata(queryString, query));
+        })
+    .map(
+        tuple2 -> {
+          Stage.SelectionQuery<?> query = tuple2.getT1();
+          QueryParameterSetter.QueryMetadata metadata = tuple2.getT2();
+          parameterBinder
+              .get()
+              .bind(
+                  metadata.withQuery(query),
+                  accessor,
+                  QueryParameterSetter.ErrorHandling.LENIENT);
+
+          return query;
+        });*/
     String queryString = countQuery.get().getQueryString();
 
-    Mutiny.AbstractQuery query =
+    Stage.AbstractQuery query =
         getQueryMethod().isNativeQuery() //
             ? session.createNativeQuery(queryString) //
             : session.createQuery(queryString, Long.class);
@@ -125,10 +169,10 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
     return countQuery.get();
   }
 
-  protected Mutiny.AbstractQuery createReactiveJpaQuery(
+  protected Stage.AbstractQuery createReactiveJpaQuery(
       String queryString,
       ReactiveJpaQueryMethod method,
-      Mutiny.Session session,
+      Stage.Session session,
       Sort sort,
       @Nullable Pageable pageable,
       ReturnedType returnedType) {
@@ -142,15 +186,21 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
 
     Class<?> typeToRead = getTypeToRead(returnedType);
 
-    return typeToRead == null //
+    return typeToRead == null
         ? session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
         : session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable), typeToRead);
+    /*return session.map(s -> {
+      Class<?> typeToRead = getTypeToRead(returnedType);
+      return typeToRead == null
+          ? s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
+          : s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable), typeToRead);
+    });*/
   }
 
-  private Mutiny.MutationQuery createReactiveJpaQueryForModifying(
+  private Stage.AbstractQuery createReactiveJpaQueryForModifying(
       String queryString,
       ReactiveJpaQueryMethod method,
-      Mutiny.Session session,
+      Stage.Session session,
       Sort sort,
       @Nullable Pageable pageable,
       ReturnedType returnedType) {

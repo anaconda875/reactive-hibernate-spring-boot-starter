@@ -1,9 +1,11 @@
 package com.htech.data.jpa.reactive.repository.query;
 
+import com.htech.jpa.reactive.connection.SessionContextHolder;
 import jakarta.persistence.*;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
+import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.jpa.util.JpaMetamodel;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -12,13 +14,15 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.util.Lazy;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   //  protected final R2dbcQueryMethod method;
   //  protected final R2dbcQueryMethod method;
   protected final ReactiveJpaQueryMethod method;
-  protected final Mutiny.SessionFactory sessionFactory;
+  protected final Stage.SessionFactory sessionFactory;
   protected final JpaMetamodel metamodel;
   //  private final PersistenceProvider provider;
   protected final Lazy<ReactiveJpaQueryExecution> execution;
@@ -26,7 +30,7 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   final Lazy<ParameterBinder> parameterBinder = Lazy.of(this::createBinder);
 
   public AbstractReactiveJpaQuery(
-      ReactiveJpaQueryMethod method, Mutiny.SessionFactory sessionFactory) {
+      ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory) {
 
     Assert.notNull(method, "R2dbcQueryMethod must not be null");
     Assert.notNull(sessionFactory, "EntityManager must not be null");
@@ -65,35 +69,48 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   @Nullable
   @Override
-  public Object execute(Object[] parameters) {
+  public Publisher<?> execute(Object[] parameters) {
     return doExecute(getExecution(), parameters);
   }
 
   @Nullable
-  private Object doExecute(ReactiveJpaQueryExecution execution, Object[] values) {
+  private Publisher<?> doExecute(ReactiveJpaQueryExecution execution, Object[] parameters) {
+    Mono<Tuple2<ReactiveJpaParametersParameterAccessor, ResultProcessor>> tuple2 =
+        Mono.fromSupplier(() -> obtainParameterAccessor(parameters))
+            .zipWhen(
+                a -> Mono.fromSupplier(() -> method.getResultProcessor().withDynamicProjection(a)))
+            .cache();
+    return tuple2.flatMapMany(
+        tuple -> {
+          ResultProcessor withDynamicProjection = tuple.getT2();
+          ReactiveJpaParametersParameterAccessor accessor = tuple.getT1();
+          // TODO
+          return withDynamicProjection.processResult(
+              execution.execute(this, accessor, SessionContextHolder.currentSession()));
+        });
+    //    ReactiveJpaParametersParameterAccessor accessor = obtainParameterAccessor(parameters);
+    //    Publisher<?> result = execution.execute(this, accessor, session);
 
-    ReactiveJpaParametersParameterAccessor accessor = obtainParameterAccessor(values);
-    Object result = execution.execute(this, accessor);
-
-    ResultProcessor withDynamicProjection =
-        method.getResultProcessor().withDynamicProjection(accessor);
+    //    ResultProcessor withDynamicProjection =
+    //        method.getResultProcessor().withDynamicProjection(accessor);
     // TODO
-    return withDynamicProjection.processResult(result, src -> src);
+    //    return withDynamicProjection.processResult(result, src -> src);
   }
 
-  private ReactiveJpaParametersParameterAccessor obtainParameterAccessor(Object[] values) {
+  private ReactiveJpaParametersParameterAccessor obtainParameterAccessor(Object[] parameters) {
 
     // TODO
     //    if (method.isNativeQuery() && PersistenceProvider.HIBERNATE.equals(provider)) {
-    //      return new HibernateJpaParametersParameterAccessor(method.getParameters(), values, em);
+    //      return new HibernateJpaParametersParameterAccessor(method.getParameters(), parameters,
+    // em);
     //    }
 
-    Mutiny.Session session = (Mutiny.Session) values[values.length - 2];
-    Mutiny.Transaction transaction = (Mutiny.Transaction) values[values.length - 1];
-    Object[] originalParams = Arrays.copyOfRange(values, 0, values.length - 2);
+    //    Stage.Session session = (Stage.Session) parameters[parameters.length - 2];
+    //    Stage.Transaction transaction = (Stage.Transaction) parameters[parameters.length - 1];
+    //    Object[] originalParams = Arrays.copyOfRange(parameters, 0, parameters.length - 2);
 
     return new ReactiveJpaParametersParameterAccessor(
-        method.getParameters(), originalParams, sessionFactory, session, transaction);
+        method.getParameters(), parameters, sessionFactory /*, session, transaction*/);
   }
 
   protected ReactiveJpaQueryExecution getExecution() {
@@ -105,26 +122,26 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     }
 
     if (method.isModifyingQuery()) {
-      return new ReactiveJpaQueryExecution.ModifyingExecution(method, sessionFactory);
+      return new ReactiveJpaQueryExecution.ModifyingExecution(/*method, sessionFactory*/ );
     } else {
       return new ReactiveJpaQueryExecution.SingleEntityExecution();
     }
   }
 
-  protected <T extends Mutiny.AbstractQuery> T applyHints(T query, ReactiveJpaQueryMethod method) {
+  protected <T extends Stage.AbstractQuery> T applyHints(T query, ReactiveJpaQueryMethod method) {
     return query;
   }
 
-  protected <T extends Mutiny.AbstractQuery> void applyQueryHint(T query, QueryHint hint) {
+  protected <T extends Stage.AbstractQuery> void applyQueryHint(T query, QueryHint hint) {
 
-    //    Assert.notNull(query, "Mutiny.AbstractQuery must not be null");
+    //    Assert.notNull(query, "Stage.AbstractQuery must not be null");
     //    Assert.notNull(hint, "QueryHint must not be null");
     //
     //    query.setHint(hint.name(), hint.value());
   }
 
-  private Mutiny.AbstractQuery applyLockMode(
-      Mutiny.AbstractQuery query, ReactiveJpaQueryMethod method) {
+  private Stage.AbstractQuery applyLockMode(
+      Stage.AbstractQuery query, ReactiveJpaQueryMethod method) {
     return query;
     //    LockModeType lockModeType = method.getLockModeType();
     //    return lockModeType == null ? query : query.setLockMode(lockModeType);
@@ -136,23 +153,27 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    return ParameterBinderFactory.createBinder(getQueryMethod().getParameters());
   }
 
-  protected Mutiny.AbstractQuery createQuery(ReactiveJpaParametersParameterAccessor parameters) {
-    return applyLockMode(
-        applyEntityGraphConfiguration(
-            applyHints(doCreateQuery(parameters, method), method), method),
-        method);
+  protected Stage.AbstractQuery createQuery(
+      ReactiveJpaParametersParameterAccessor parameters, Stage.Session session) {
+    return doCreateQuery(parameters, method, session);
+    //    return applyLockMode(
+    //        applyEntityGraphConfiguration(
+    //            applyHints(doCreateQuery(parameters, method), method), method),
+    //        method);
   }
 
-  private Mutiny.AbstractQuery applyEntityGraphConfiguration(
-      Mutiny.AbstractQuery query, ReactiveJpaQueryMethod method) {
+  private Stage.AbstractQuery applyEntityGraphConfiguration(
+      Stage.AbstractQuery query, ReactiveJpaQueryMethod method) {
 
     return query;
   }
 
-  protected Mutiny.AbstractQuery createCountQuery(ReactiveJpaParametersParameterAccessor values) {
-    Mutiny.AbstractQuery countQuery = doCreateCountQuery(values);
+  // may be used for PagedExecution
+  protected Stage.AbstractQuery createCountQuery(
+      ReactiveJpaParametersParameterAccessor values, Stage.Session session) {
+    //    Stage.AbstractQuery countQuery = doCreateCountQuery(values);
 
-    return countQuery;
+    return doCreateCountQuery(values, session);
 
     //    return method.applyHintsToCountQuery() ? applyHints(countQuery, method) : countQuery;
   }
@@ -170,11 +191,13 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
         : null;*/
   }
 
-  protected abstract Mutiny.AbstractQuery doCreateQuery(
-      ReactiveJpaParametersParameterAccessor accessor, ReactiveJpaQueryMethod method);
+  protected abstract Stage.AbstractQuery doCreateQuery(
+      ReactiveJpaParametersParameterAccessor accessor,
+      ReactiveJpaQueryMethod method,
+      Stage.Session session);
 
-  protected abstract Mutiny.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor);
+  protected abstract Stage.AbstractQuery doCreateCountQuery(
+      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session);
 
   static class TupleConverter implements Converter<Object, Object> {
 

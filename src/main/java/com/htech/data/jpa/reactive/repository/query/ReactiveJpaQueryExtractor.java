@@ -1,9 +1,9 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 
 public interface ReactiveJpaQueryExtractor {
-  String extractQueryString(Mutiny.AbstractQuery query);
+  String extractQueryString(Stage.AbstractQuery query);
 
   boolean canExtractQuery();
 }

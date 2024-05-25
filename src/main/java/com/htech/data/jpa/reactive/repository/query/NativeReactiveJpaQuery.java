@@ -1,7 +1,7 @@
 package com.htech.data.jpa.reactive.repository.query;
 
 import jakarta.persistence.Tuple;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.QueryRewriter;
@@ -16,7 +16,7 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
 
   public NativeReactiveJpaQuery(
       ReactiveJpaQueryMethod method,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter rewriter,
@@ -41,13 +41,19 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
   }
 
   @Override
-  protected Mutiny.AbstractQuery createReactiveJpaQuery(
+  protected Stage.AbstractQuery createReactiveJpaQuery(
       String queryString,
       ReactiveJpaQueryMethod method,
-      Mutiny.Session session,
+      Stage.Session session,
       Sort sort,
       Pageable pageable,
       ReturnedType returnedType) {
+    /*return session.map(s -> {
+      Class<?> type = getTypeToQueryFor(returnedType);
+      return type == null
+        ? s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
+        : s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable), type);
+    });*/
     Class<?> type = getTypeToQueryFor(returnedType);
 
     return type == null

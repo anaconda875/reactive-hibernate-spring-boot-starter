@@ -3,7 +3,7 @@ package com.htech.data.jpa.reactive.repository.query;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.*;
 import java.util.List;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.domain.OffsetScrollPosition;
 import org.springframework.data.domain.ScrollPosition;
 import org.springframework.data.domain.Sort;
@@ -29,14 +29,14 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
   PartTreeReactiveJpaQuery(
       ReactiveJpaQueryMethod method,
       EntityManagerFactory entityManagerFactory,
-      Mutiny.SessionFactory sessionFactory) {
+      Stage.SessionFactory sessionFactory) {
     this(method, entityManagerFactory, sessionFactory, EscapeCharacter.DEFAULT);
   }
 
   PartTreeReactiveJpaQuery(
       ReactiveJpaQueryMethod method,
       EntityManagerFactory entityManagerFactory,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       EscapeCharacter escape) {
 
     super(method, sessionFactory);
@@ -74,16 +74,18 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
   }
 
   @Override
-  public Mutiny.AbstractQuery doCreateQuery(
-      ReactiveJpaParametersParameterAccessor accessor, ReactiveJpaQueryMethod method) {
-    return query.createQuery(accessor);
+  public Stage.AbstractQuery doCreateQuery(
+      ReactiveJpaParametersParameterAccessor accessor,
+      ReactiveJpaQueryMethod method,
+      Stage.Session session) {
+    return query.createQuery(accessor, session);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Mutiny.SelectionQuery<Long> doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor) {
-    return (Mutiny.SelectionQuery<Long>) countQuery.createQuery(accessor);
+  public Stage.AbstractQuery doCreateCountQuery(
+      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
+    return /*(Stage.SelectionQuery<Long>) */ countQuery.createQuery(accessor, session);
   }
 
   @Override
@@ -185,9 +187,47 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
       }
     }
 
-    public Mutiny.AbstractQuery createQuery(ReactiveJpaParametersParameterAccessor accessor) {
+    public Stage.AbstractQuery createQuery(
+        ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
       C criteriaQuery = cachedCriteria;
       ParameterBinder parameterBinder = cachedParameterBinder;
+
+      /*return Mono.just(accessor)
+      .zipWhen(
+          a -> {
+            C criteriaQuery = cachedCriteria;
+            ParameterBinder parameterBinder = cachedParameterBinder;
+            if (cachedCriteria == null || accessor.hasBindableNullValue()) {
+              AbstractQueryCreator<C, ?> creator = createCreator(accessor);
+              criteriaQuery = creator.createQuery(getDynamicSort(accessor));
+              List<ParameterMetadataProvider.ParameterMetadata<?>> expressions =
+                  creator.getParameterExpressions();
+              parameterBinder = getBinder(expressions);
+            }
+
+            if (parameterBinder == null) {
+              return Mono.error(() -> new IllegalStateException("ParameterBinder is null"));
+            }
+
+            return Mono.zip(session, Mono.just(criteriaQuery), Mono.just(parameterBinder));
+          })
+      .map(
+          tuple ->
+              Tuples.of(
+                  tuple.getT1(),
+                  createQuery(tuple.getT2().getT1(), tuple.getT2().getT2()),
+                  tuple.getT2().getT3()))
+      .map(
+          tuple -> {
+            ReactiveJpaParametersParameterAccessor acs = tuple.getT1();
+            ScrollPosition scrollPosition =
+                acs.getParameters().hasScrollPositionParameter()
+                    ? acs.getScrollPosition()
+                    : null;
+            return restrictMaxResultsIfNecessary(
+                invokeBinding(tuple.getT3(), tuple.getT2(), acs, this.metadataCache),
+                scrollPosition);
+          });*/
 
       if (cachedCriteria == null || accessor.hasBindableNullValue()) {
         AbstractQueryCreator<C, ?> creator = createCreator(accessor);
@@ -202,7 +242,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
       }
 
       // TODO
-      Mutiny.AbstractQuery query = createQuery(accessor.getSession(), criteriaQuery);
+      Stage.AbstractQuery query = createQuery(session, criteriaQuery);
 
       ScrollPosition scrollPosition =
           accessor.getParameters().hasScrollPositionParameter()
@@ -213,9 +253,9 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @SuppressWarnings("ConstantConditions")
-    protected Mutiny.AbstractQuery restrictMaxResultsIfNecessary(
-        Mutiny.AbstractQuery query, @Nullable ScrollPosition scrollPosition) {
-      Mutiny.SelectionQuery tmp = (Mutiny.SelectionQuery) query;
+    protected Stage.AbstractQuery restrictMaxResultsIfNecessary(
+        Stage.AbstractQuery query, @Nullable ScrollPosition scrollPosition) {
+      Stage.SelectionQuery tmp = (Stage.SelectionQuery) query;
       if (scrollPosition instanceof OffsetScrollPosition offset) {
         tmp.setFirstResult(Math.toIntExact(offset.getOffset()));
       }
@@ -244,7 +284,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
       return tmp;
     }
 
-    protected abstract Mutiny.AbstractQuery createQuery(Mutiny.Session session, C criteria);
+    protected abstract Stage.AbstractQuery createQuery(Stage.Session session, C criteria);
 
     protected AbstractQueryCreator<C, Predicate> createCreator(
         @Nullable JpaParametersParameterAccessor accessor) {
@@ -266,9 +306,9 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
           new ReactiveJpaCriteriaQueryCreator(tree, returnedType, builder, provider);
     }
 
-    protected Mutiny.AbstractQuery invokeBinding(
+    protected Stage.AbstractQuery invokeBinding(
         ParameterBinder binder,
-        Mutiny.AbstractQuery query,
+        Stage.AbstractQuery query,
         JpaParametersParameterAccessor accessor,
         QueryParameterSetter.QueryMetadataCache metadataCache) {
 
@@ -297,7 +337,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @Override
-    protected Mutiny.AbstractQuery createQuery(Mutiny.Session session, CriteriaQuery<?> criteria) {
+    protected Stage.AbstractQuery createQuery(Stage.Session session, CriteriaQuery<?> criteria) {
       if (this.cachedCriteria != null) {
         synchronized (this.cachedCriteria) {
           return session.createQuery(criteria);
@@ -325,9 +365,9 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @Override
-    protected Mutiny.AbstractQuery invokeBinding(
+    protected Stage.AbstractQuery invokeBinding(
         ParameterBinder binder,
-        Mutiny.AbstractQuery query,
+        Stage.AbstractQuery query,
         JpaParametersParameterAccessor accessor,
         QueryParameterSetter.QueryMetadataCache metadataCache) {
 
@@ -344,7 +384,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @Override
-    protected Mutiny.AbstractQuery createQuery(Mutiny.Session session, CriteriaQuery<?> criteria) {
+    protected Stage.AbstractQuery createQuery(Stage.Session session, CriteriaQuery<?> criteria) {
       if (this.cachedCriteria != null) {
         synchronized (this.cachedCriteria) {
           return session.createQuery(criteria);
@@ -379,8 +419,8 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @Override
-    protected Mutiny.AbstractQuery createQuery(
-        Mutiny.Session session, CriteriaDelete<?> criteriaQuery) {
+    protected Stage.AbstractQuery createQuery(
+        Stage.Session session, CriteriaDelete<?> criteriaQuery) {
       if (this.cachedCriteria != null) {
         synchronized (this.cachedCriteria) {
           return session.createQuery(criteriaQuery);
@@ -391,8 +431,8 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @Override
-    protected Mutiny.AbstractQuery restrictMaxResultsIfNecessary(
-        Mutiny.AbstractQuery query, ScrollPosition scrollPosition) {
+    protected Stage.AbstractQuery restrictMaxResultsIfNecessary(
+        Stage.AbstractQuery query, ScrollPosition scrollPosition) {
       return query;
     }
   }

@@ -1,8 +1,8 @@
 package com.htech.data.jpa.reactive.core;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 
 public interface ReactiveJpaEntityOperations {
 
-  Mutiny.SessionFactory getSessionFactory();
+  Stage.SessionFactory getSessionFactory();
 }

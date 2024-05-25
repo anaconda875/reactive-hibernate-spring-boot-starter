@@ -16,8 +16,8 @@ import org.hibernate.boot.model.naming.ImplicitNamingStrategy;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
-import org.hibernate.reactive.mutiny.Mutiny;
 import org.hibernate.reactive.provider.ReactivePersistenceProvider;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -166,13 +166,13 @@ public class ReactiveHibernateJpaConfiguration {
   }
 
   @Bean
-  public Mutiny.SessionFactory sessionFactory(EntityManagerFactory emf) {
-    return emf.unwrap(Mutiny.SessionFactory.class);
+  public Stage.SessionFactory sessionFactory(EntityManagerFactory emf) {
+    return emf.unwrap(Stage.SessionFactory.class);
   }
 
   @Bean
   public org.springframework.transaction.TransactionManager transactionManager(
-      Mutiny.SessionFactory sessionFactory) {
+      Stage.SessionFactory sessionFactory) {
     return new ReactiveHibernateTransactionManager(sessionFactory);
   }
 

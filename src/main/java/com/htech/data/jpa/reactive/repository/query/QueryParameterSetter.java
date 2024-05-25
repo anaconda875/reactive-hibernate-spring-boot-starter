@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -102,7 +102,7 @@ public interface QueryParameterSetter {
     private Map<String, QueryParameterSetter.QueryMetadata> cache = Collections.emptyMap();
 
     public QueryParameterSetter.QueryMetadata getMetadata(
-        String cacheKey, Mutiny.AbstractQuery query) {
+        String cacheKey, Stage.AbstractQuery query) {
 
       QueryParameterSetter.QueryMetadata queryMetadata = cache.get(cacheKey);
 
@@ -134,7 +134,7 @@ public interface QueryParameterSetter {
     private final Set<Parameter<?>> parameters = new HashSet<>();
     private final boolean registerExcessParameters = false;
 
-    QueryMetadata(Mutiny.AbstractQuery query) {
+    QueryMetadata(Stage.AbstractQuery query) {
 
       /* this.namedParameters = QueryUtils.hasNamedParameter(query);
       this.parameters = query.getParameters();
@@ -157,7 +157,7 @@ public interface QueryParameterSetter {
       //      this.registerExcessParameters = metadata.registerExcessParameters;
     }
 
-    public QueryParameterSetter.BindableQuery withQuery(Mutiny.AbstractQuery query) {
+    public QueryParameterSetter.BindableQuery withQuery(Stage.AbstractQuery query) {
       return new QueryParameterSetter.BindableQuery(this, query);
     }
 
@@ -195,52 +195,52 @@ public interface QueryParameterSetter {
 
   class BindableQuery extends QueryMetadata {
 
-    protected final Mutiny.AbstractQuery query;
+    protected final Stage.AbstractQuery query;
 
-    //    protected final Mutiny.AbstractQuery unwrapped;
+    //    protected final Stage.AbstractQuery unwrapped;
 
-    BindableQuery(QueryParameterSetter.QueryMetadata metadata, Mutiny.AbstractQuery query) {
+    BindableQuery(QueryParameterSetter.QueryMetadata metadata, Stage.AbstractQuery query) {
       super(metadata);
       this.query = query;
       //      this.unwrapped = Proxy.isProxyClass(query.getClass()) ? query.unwrap(null) : query;
     }
 
-    private BindableQuery(Mutiny.AbstractQuery query) {
+    private BindableQuery(Stage.AbstractQuery query) {
       super(query);
       this.query = query;
       //      this.unwrapped = Proxy.isProxyClass(query.getClass()) ? query.unwrap(null) : query;
     }
 
-    public static QueryParameterSetter.BindableQuery from(Mutiny.AbstractQuery query) {
+    public static QueryParameterSetter.BindableQuery from(Stage.AbstractQuery query) {
       return new QueryParameterSetter.BindableQuery(query);
     }
 
-    public Mutiny.AbstractQuery getQuery() {
+    public Stage.AbstractQuery getQuery() {
       return query;
     }
 
-    public <T> Mutiny.AbstractQuery setParameter(Parameter<T> param, T value) {
+    public <T> Stage.AbstractQuery setParameter(Parameter<T> param, T value) {
       return query.setParameter(param, value);
     }
 
-    public Mutiny.AbstractQuery setParameter(
+    public Stage.AbstractQuery setParameter(
         Parameter<Date> param, Date value, TemporalType temporalType) {
       return query.setParameter(param, value /*, temporalType*/);
     }
 
-    public Mutiny.AbstractQuery setParameter(String name, Object value) {
+    public Stage.AbstractQuery setParameter(String name, Object value) {
       return query.setParameter(name, value);
     }
 
-    public Mutiny.AbstractQuery setParameter(String name, Date value, TemporalType temporalType) {
+    public Stage.AbstractQuery setParameter(String name, Date value, TemporalType temporalType) {
       return query.setParameter(name, value /*, temporalType*/);
     }
 
-    public Mutiny.AbstractQuery setParameter(int position, Object value) {
+    public Stage.AbstractQuery setParameter(int position, Object value) {
       return query.setParameter(position, value);
     }
 
-    public Mutiny.AbstractQuery setParameter(int position, Date value, TemporalType temporalType) {
+    public Stage.AbstractQuery setParameter(int position, Date value, TemporalType temporalType) {
       return query.setParameter(position, value /*, temporalType*/);
     }
   }
