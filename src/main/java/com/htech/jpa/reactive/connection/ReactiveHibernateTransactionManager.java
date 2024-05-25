@@ -1,11 +1,9 @@
 package com.htech.jpa.reactive.connection;
 
-import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
-
 import java.time.Duration;
-import org.hibernate.reactive.mutiny.Mutiny;
-import org.hibernate.reactive.mutiny.impl.MutinySessionImpl;
 import org.hibernate.reactive.pool.ReactiveConnection;
+import org.hibernate.reactive.stage.Stage;
+import org.hibernate.reactive.stage.impl.StageSessionImpl;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.CannotCreateTransactionException;
@@ -19,30 +17,30 @@ import reactor.core.publisher.Mono;
 public class ReactiveHibernateTransactionManager extends AbstractReactiveTransactionManager
     implements InitializingBean {
 
-  @Nullable private Mutiny.SessionFactory sessionFactory;
+  @Nullable private Stage.SessionFactory sessionFactory;
 
   private boolean enforceReadOnly = false;
 
   public ReactiveHibernateTransactionManager() {}
 
-  public ReactiveHibernateTransactionManager(Mutiny.SessionFactory sessionFactory) {
+  public ReactiveHibernateTransactionManager(Stage.SessionFactory sessionFactory) {
     this();
     setSessionFactory(sessionFactory);
     afterPropertiesSet();
   }
 
-  public void setSessionFactory(@Nullable Mutiny.SessionFactory sessionFactory) {
+  public void setSessionFactory(@Nullable Stage.SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
 
   @Nullable
-  public Mutiny.SessionFactory getSessionFactory() {
+  public Stage.SessionFactory getSessionFactory() {
     return this.sessionFactory;
   }
 
-  protected Mutiny.SessionFactory obtainSessionFactory() {
-    Mutiny.SessionFactory connectionFactory = getSessionFactory();
-    Assert.state(connectionFactory != null, "No Mutiny.SessionFactory set");
+  protected Stage.SessionFactory obtainSessionFactory() {
+    Stage.SessionFactory connectionFactory = getSessionFactory();
+    Assert.state(connectionFactory != null, "No Stage.SessionFactory set");
     return connectionFactory;
   }
 
@@ -91,18 +89,21 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
 
     return Mono.defer(
             () -> {
-              Mono<MutinySessionImpl> connectionMono;
+              Mono<StageSessionImpl> connectionMono;
 
               if (!txObject.hasConnectionHolder()
                   || txObject.getConnectionHolder().isSynchronizedWithTransaction()) {
-                Mono<MutinySessionImpl> newCon =
-                    toWrapper(obtainSessionFactory().openSession(), Mono.class);
+                Mono<StageSessionImpl> newCon =
+                    Mono.defer(
+                        () ->
+                            Mono.fromCompletionStage(obtainSessionFactory().openSession())
+                                .map(StageSessionImpl.class::cast));
                 connectionMono =
                     newCon.doOnNext(
                         connection -> {
                           if (logger.isDebugEnabled()) {
                             logger.debug(
-                                "Acquired MutinySessionImpl ["
+                                "Acquired StageSessionImpl ["
                                     + connection
                                     + "] for R2DBC transaction");
                           }
@@ -148,19 +149,19 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
                   .onErrorMap(
                       ex ->
                           new CannotCreateTransactionException(
-                              "Could not open R2DBC MutinySessionImpl for transaction", ex));
+                              "Could not open R2DBC StageSessionImpl for transaction", ex));
             })
         .then();
   }
 
   private Mono<Void> doBegin(
-      MutinySessionImpl con,
+      StageSessionImpl con,
       ConnectionFactoryTransactionObject transaction,
       TransactionDefinition definition) {
     /*transaction.setMustRestoreAutoCommit(con.isAutoCommit());
     io.r2dbc.spi.TransactionDefinition transactionDefinition = createTransactionDefinition(definition);
     if (logger.isDebugEnabled()) {
-      logger.debug("Starting R2DBC transaction on MutinySessionImpl [" + con + "] using [" + transactionDefinition + "]");
+      logger.debug("Starting R2DBC transaction on StageSessionImpl [" + con + "] using [" + transactionDefinition + "]");
     }*/
     return Mono.fromCompletionStage(
         con.getReactiveConnection().beginTransaction(/*transactionDefinition*/ ));
@@ -215,7 +216,7 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
         (ConnectionFactoryTransactionObject) status.getTransaction();
     if (status.isDebug()) {
       logger.debug(
-          "Committing R2DBC transaction on MutinySessionImpl ["
+          "Committing R2DBC transaction on StageSessionImpl ["
               + txObject.getConnectionHolder().getConnection()
               + "]");
     }
@@ -232,7 +233,7 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
         (ConnectionFactoryTransactionObject) status.getTransaction();
     if (status.isDebug()) {
       logger.debug(
-          "Rolling back R2DBC transaction on MutinySessionImpl ["
+          "Rolling back R2DBC transaction on StageSessionImpl ["
               + txObject.getConnectionHolder().getConnection()
               + "]");
     }
@@ -280,9 +281,9 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
           // Reset connection.
           try {
             if (txObject.isNewConnectionHolder()) {
-              MutinySessionImpl con = txObject.getConnectionHolder().getConnection();
+              StageSessionImpl con = txObject.getConnectionHolder().getConnection();
               if (logger.isDebugEnabled()) {
-                logger.debug("Releasing R2DBC MutinySessionImpl [" + con + "] after transaction");
+                logger.debug("Releasing R2DBC StageSessionImpl [" + con + "] after transaction");
               }
               Mono<Void> restoreMono = Mono.empty();
               /*if (txObject.isMustRestoreAutoCommit() && !con.isAutoCommit()) {
@@ -314,7 +315,7 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
   }
 
   protected Mono<Void> prepareTransactionalConnection(
-      MutinySessionImpl con, TransactionDefinition definition) {
+      StageSessionImpl con, TransactionDefinition definition) {
     Mono<Void> prepare = Mono.empty();
     if (isEnforceReadOnly() && definition.isReadOnly()) {
       prepare =

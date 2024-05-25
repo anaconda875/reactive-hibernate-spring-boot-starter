@@ -1,10 +1,10 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 
 public class DefaultReactiveJpaQueryExtractor implements ReactiveJpaQueryExtractor {
   @Override
-  public String extractQueryString(Mutiny.AbstractQuery query) {
+  public String extractQueryString(Stage.AbstractQuery query) {
     return null;
   }
 

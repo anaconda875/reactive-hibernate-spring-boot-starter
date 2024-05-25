@@ -4,7 +4,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.lang.reflect.Method;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.jpa.repository.query.*;
 import org.springframework.data.projection.ProjectionFactory;
@@ -26,7 +26,7 @@ public class ReactiveJpaQueryLookupStrategy {
 
   public static QueryLookupStrategy create(
       EntityManagerFactory entityManagerFactory,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       ReactiveJpaQueryMethodFactory queryMethodFactory,
       @Nullable QueryLookupStrategy.Key key,
       QueryMethodEvaluationContextProvider evaluationContextProvider,
@@ -71,12 +71,12 @@ public class ReactiveJpaQueryLookupStrategy {
 
   abstract static class AbstractQueryLookupStrategy implements QueryLookupStrategy {
 
-    protected final Mutiny.SessionFactory sessionFactory;
+    protected final Stage.SessionFactory sessionFactory;
     protected final ReactiveJpaQueryMethodFactory queryMethodFactory;
     protected final ReactiveQueryRewriterProvider queryRewriterProvider;
 
     public AbstractQueryLookupStrategy(
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
         ReactiveQueryRewriterProvider queryRewriterProvider) {
 
@@ -104,7 +104,7 @@ public class ReactiveJpaQueryLookupStrategy {
     protected abstract RepositoryQuery resolveQuery(
         ReactiveJpaQueryMethod method,
         QueryRewriter queryRewriter,
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         NamedQueries namedQueries);
   }
 
@@ -115,7 +115,7 @@ public class ReactiveJpaQueryLookupStrategy {
 
     public CreateQueryLookupStrategy(
         EntityManagerFactory entityManagerFactory,
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
         ReactiveQueryRewriterProvider queryRewriterProvider,
         EscapeCharacter escape) {
@@ -129,7 +129,7 @@ public class ReactiveJpaQueryLookupStrategy {
     protected RepositoryQuery resolveQuery(
         ReactiveJpaQueryMethod method,
         QueryRewriter queryRewriter,
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         NamedQueries namedQueries) {
       return new PartTreeReactiveJpaQuery(method, entityManagerFactory, sessionFactory, escape);
     }
@@ -140,7 +140,7 @@ public class ReactiveJpaQueryLookupStrategy {
     private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
     public DeclaredQueryLookupStrategy(
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
         QueryMethodEvaluationContextProvider evaluationContextProvider,
         ReactiveQueryRewriterProvider queryRewriterProvider) {
@@ -154,7 +154,7 @@ public class ReactiveJpaQueryLookupStrategy {
     protected RepositoryQuery resolveQuery(
         ReactiveJpaQueryMethod method,
         QueryRewriter queryRewriter,
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         NamedQueries namedQueries) {
       // TODO: important
       if (method.isProcedureQuery()) {
@@ -202,7 +202,7 @@ public class ReactiveJpaQueryLookupStrategy {
     private String getCountQuery(
         ReactiveJpaQueryMethod method,
         NamedQueries namedQueries,
-        Mutiny.SessionFactory sessionFactory) {
+        Stage.SessionFactory sessionFactory) {
       // TODO
 
       return null;
@@ -215,7 +215,7 @@ public class ReactiveJpaQueryLookupStrategy {
     private final CreateQueryLookupStrategy createStrategy;
 
     public CreateIfNotFoundQueryLookupStrategy(
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
         CreateQueryLookupStrategy createStrategy,
         DeclaredQueryLookupStrategy lookupStrategy,
@@ -234,7 +234,7 @@ public class ReactiveJpaQueryLookupStrategy {
     protected RepositoryQuery resolveQuery(
         ReactiveJpaQueryMethod method,
         QueryRewriter queryRewriter,
-        Mutiny.SessionFactory sessionFactory,
+        Stage.SessionFactory sessionFactory,
         NamedQueries namedQueries) {
 
       RepositoryQuery lookupQuery =

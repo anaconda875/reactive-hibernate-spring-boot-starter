@@ -1,36 +1,37 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 
 public class ReactiveJpaParametersParameterAccessor extends JpaParametersParameterAccessor {
 
-  protected final Mutiny.SessionFactory sessionFactory;
-  protected final Mutiny.Session session;
-  protected final Mutiny.Transaction transaction;
+  protected final Stage.SessionFactory sessionFactory;
+
+  //  protected final Mono<Stage.Session> session;
+  //  protected final Stage.Session session;
+  //  protected final Stage.Transaction transaction;
 
   public ReactiveJpaParametersParameterAccessor(
-      Parameters<?, ?> parameters,
-      Object[] values,
-      Mutiny.SessionFactory sessionFactory,
-      Mutiny.Session session,
-      Mutiny.Transaction transaction) {
+      Parameters<?, ?> parameters, Object[] values, Stage.SessionFactory sessionFactory /*,
+      Mono<Stage.Session> session,
+      Stage.Session session,
+      Stage.Transaction transaction*/) {
     super(parameters, values);
     this.sessionFactory = sessionFactory;
-    this.session = session;
-    this.transaction = transaction;
+    //    this.session = session;
+    //    this.transaction = transaction;
   }
 
-  public Mutiny.SessionFactory getSessionFactory() {
+  public Stage.SessionFactory getSessionFactory() {
     return sessionFactory;
   }
 
-  public Mutiny.Session getSession() {
-    return session;
-  }
+  //  public Mono<Stage.Session> getSession() {
+  //    return session;
+  //  }
 
-  public Mutiny.Transaction getTransaction() {
-    return transaction;
-  }
+  //  public Stage.Transaction getTransaction() {
+  //    return transaction;
+  //  }
 }

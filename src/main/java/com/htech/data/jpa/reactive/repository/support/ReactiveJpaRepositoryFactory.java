@@ -8,8 +8,7 @@ import jakarta.persistence.metamodel.Metamodel;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
-import lombok.SneakyThrows;
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
@@ -27,7 +26,7 @@ import org.springframework.util.ReflectionUtils;
 public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySupport
     implements BeanClassLoaderAware {
 
-  protected final Mutiny.SessionFactory sessionFactory;
+  protected final Stage.SessionFactory sessionFactory;
   protected final EntityManagerFactory entityManagerFactory;
   protected ClassLoader classLoader;
   protected EscapeCharacter escapeCharacter;
@@ -36,7 +35,7 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
   protected ReactiveQueryRewriterProvider queryRewriterProvider;
 
   public ReactiveJpaRepositoryFactory(
-      Mutiny.SessionFactory sessionFactory, EntityManagerFactory entityManagerFactory) {
+      Stage.SessionFactory sessionFactory, EntityManagerFactory entityManagerFactory) {
     this.sessionFactory = sessionFactory;
     this.entityManagerFactory = entityManagerFactory;
   }
@@ -54,13 +53,12 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
     }
   }
 
-  @SneakyThrows
   @Override
   protected Object getTargetRepository(RepositoryInformation information) {
     EntityInformation<?, Object> entityInformation =
         getEntityInformation(information.getDomainType());
     ReactiveJpaRepositoryImplementation<?, ?> repository =
-        getTargetRepositoryViaReflection1(information, entityInformation /*, sessionFactory*/);
+        getTargetRepositoryViaReflection(information, entityInformation, sessionFactory);
     //
     // repository.setRepositoryMethodMetadata(crudMethodMetadataPostProcessor.getCrudMethodMetadata());
     repository.setEscapeCharacter(escapeCharacter);
@@ -77,7 +75,7 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
             repositoryBaseClass,
             "createInstance",
             JpaEntityInformation.class,
-            Mutiny.SessionFactory.class,
+            Stage.SessionFactory.class,
             ClassLoader.class);
     ReflectionUtils.makeAccessible(method);
 

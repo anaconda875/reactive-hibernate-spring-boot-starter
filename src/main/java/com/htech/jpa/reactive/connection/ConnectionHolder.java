@@ -1,6 +1,6 @@
 package com.htech.jpa.reactive.connection;
 
-import org.hibernate.reactive.mutiny.impl.MutinySessionImpl;
+import org.hibernate.reactive.stage.impl.StageSessionImpl;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
 import org.springframework.util.Assert;
@@ -9,17 +9,17 @@ public class ConnectionHolder extends ResourceHolderSupport {
 
   static final String SAVEPOINT_NAME_PREFIX = "SAVEPOINT_";
 
-  @Nullable private MutinySessionImpl currentConnection;
+  @Nullable private StageSessionImpl currentConnection;
 
   private boolean transactionActive;
 
   private int savepointCounter = 0;
 
-  public ConnectionHolder(MutinySessionImpl connection) {
+  public ConnectionHolder(StageSessionImpl connection) {
     this(connection, false);
   }
 
-  public ConnectionHolder(MutinySessionImpl connection, boolean transactionActive) {
+  public ConnectionHolder(StageSessionImpl connection, boolean transactionActive) {
     this.currentConnection = connection;
     this.transactionActive = transactionActive;
   }
@@ -36,11 +36,11 @@ public class ConnectionHolder extends ResourceHolderSupport {
     return this.transactionActive;
   }
 
-  protected void setConnection(@Nullable MutinySessionImpl connection) {
+  protected void setConnection(@Nullable StageSessionImpl connection) {
     this.currentConnection = connection;
   }
 
-  public MutinySessionImpl getConnection() {
+  public StageSessionImpl getConnection() {
     Assert.state(this.currentConnection != null, "Active ReactiveConnection is required");
     return this.currentConnection;
   }

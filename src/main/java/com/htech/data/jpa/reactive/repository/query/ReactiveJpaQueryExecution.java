@@ -1,14 +1,16 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import io.smallrye.mutiny.Uni;
-import jakarta.persistence.NoResultException;
 import java.util.List;
-import org.hibernate.reactive.mutiny.Mutiny;
+import java.util.concurrent.CompletionStage;
+import org.apache.commons.collections4.CollectionUtils;
+import org.hibernate.reactive.stage.Stage;
+import org.reactivestreams.Publisher;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public abstract class ReactiveJpaQueryExecution {
 
@@ -24,22 +26,25 @@ public abstract class ReactiveJpaQueryExecution {
     CONVERSION_SERVICE = conversionService;
   }
 
-  @Nullable
-  public Object execute(
-      AbstractReactiveJpaQuery query, ReactiveJpaParametersParameterAccessor accessor) {
-
+  //  @Nullable
+  public Publisher<?> execute(
+      AbstractReactiveJpaQuery query,
+      ReactiveJpaParametersParameterAccessor accessor,
+      Mono<Stage.Session> session) {
     Assert.notNull(query, "AbstractReactiveJpaQuery must not be null");
     Assert.notNull(accessor, "JpaParametersParameterAccessor must not be null");
 
-    Object result;
+    return doExecute(query, accessor, session);
 
-    try {
-      result = doExecute(query, accessor);
-    } catch (NoResultException e) {
-      return null;
-    }
-
-    return result;
+    //    Publisher<?> result;
+    //
+    //    try {
+    //      result = doExecute(query, accessor, session);
+    //    } catch (NoResultException e) {
+    //      return null;
+    //    }
+    //
+    //    return result;
 
     //    if (result == null) {
     //      return null;
@@ -58,39 +63,95 @@ public abstract class ReactiveJpaQueryExecution {
     //        : result;
   }
 
-  @Nullable
-  protected abstract Object doExecute(
-      AbstractReactiveJpaQuery query, ReactiveJpaParametersParameterAccessor accessor);
+  //  @Nullable
+  protected Publisher<?> doExecute(
+      AbstractReactiveJpaQuery query,
+      ReactiveJpaParametersParameterAccessor accessor,
+      Mono<Stage.Session> session) {
+    return doExecute(session.map(s -> query.createQuery(accessor, s)));
+  }
+
+  protected abstract Publisher<?> doExecute(Mono<Stage.AbstractQuery> query);
 
   static class CollectionExecution extends ReactiveJpaQueryExecution {
 
     @Override
-    protected Object doExecute(
-        AbstractReactiveJpaQuery query, ReactiveJpaParametersParameterAccessor accessor) {
-      return ((Mutiny.SelectionQuery) query.createQuery(accessor)).getResultList();
+    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+      return query
+          .map(Stage.SelectionQuery.class::cast)
+          .flatMap(
+              q ->
+                  Mono.defer(
+                      () -> {
+                        CompletionStage<List<?>> resultList = q.getResultList();
+                        return Mono.fromCompletionStage(resultList);
+                      }))
+          .flatMapMany(Flux::fromIterable);
     }
+
+    /*@Override
+    protected Publisher<?> doExecute(
+        AbstractReactiveJpaQuery query,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
+      //      return ((Stage.SelectionQuery) query.createQuery(accessor, session)).getResultList();
+      return Flux.usingWhen(
+          session,
+          s ->
+              Mono.fromSupplier(() -> query.createQuery(accessor, s))
+                  .map(Stage.SelectionQuery.class::cast)
+                  .flatMapMany(
+                      q ->
+                          Flux.defer(
+                              () -> {
+                                CompletionStage<List<?>> resultList = q.getResultList();
+                                return Mono.fromCompletionStage(resultList)
+                                    .flatMapMany(Flux::fromIterable);
+                              })),
+          s -> Mono.fromCompletionStage(s.close()),
+          (s, t) -> Mono.fromCompletionStage(s.close()).then(Mono.error(t)),
+          s -> Mono.fromCompletionStage(s.close()));
+    }*/
   }
 
   static class SingleEntityExecution extends ReactiveJpaQueryExecution {
 
-    @Override
-    protected Object doExecute(
-        AbstractReactiveJpaQuery query, ReactiveJpaParametersParameterAccessor accessor) {
+    /*@Override
+    protected Publisher<?> doExecute(
+        AbstractReactiveJpaQuery query,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
+      //      return ((Stage.SelectionQuery<?>) query.createQuery(accessor,
+      // session)).getSingleResult();
+      return Mono.usingWhen(
+          session,
+          s ->
+              Mono.fromSupplier(() -> query.createQuery(accessor, s))
+                  .map(Stage.SelectionQuery.class::cast)
+                  .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.getSingleResult()))),
+          s -> Mono.fromCompletionStage(s.close()),
+          (s, t) -> Mono.fromCompletionStage(s.close()).then(Mono.error(t)),
+          s -> Mono.fromCompletionStage(s.close()));
+    }*/
 
-      return ((Mutiny.SelectionQuery<?>) query.createQuery(accessor)).getSingleResult();
+    @Override
+    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+      return query
+          .map(Stage.SelectionQuery.class::cast)
+          .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.getSingleResult())));
     }
   }
 
   static class ModifyingExecution extends ReactiveJpaQueryExecution {
 
-    private final Mutiny.SessionFactory sessionFactory;
+    //    private final Stage.SessionFactory sessionFactory;
 
     //    private final boolean flush;
     //    private final boolean clear;
 
-    public ModifyingExecution(ReactiveJpaQueryMethod method, Mutiny.SessionFactory sessionFactory) {
-
-      Assert.notNull(sessionFactory, "The EntityManager must not be null");
+    public ModifyingExecution(
+        /*ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory*/ ) {
+      //      Assert.notNull(sessionFactory, "The sessionFactory must not be null");
 
       //      Class<?> returnType = method.getReturnType();
       //
@@ -101,54 +162,130 @@ public abstract class ReactiveJpaQueryExecution {
       //          "Modifying queries can only use void or int/Integer as return type; Offending
       // method: " + method);
       //
-      this.sessionFactory = sessionFactory;
+      //      this.sessionFactory = sessionFactory;
       //      this.flush = method.getFlushAutomatically();
       //      this.clear = method.getClearAutomatically();
     }
 
-    @Override
-    protected Object doExecute(
-        AbstractReactiveJpaQuery query, ReactiveJpaParametersParameterAccessor accessor) {
-
+    /*@Override
+    protected Publisher<?> doExecute(
+        AbstractReactiveJpaQuery query,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
+      return Mono.usingWhen(
+          session,
+          s ->
+              Mono.fromSupplier(() -> query.createQuery(accessor, s))
+                  .map(Stage.MutationQuery.class::cast)
+                  .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate()))),
+          s -> Mono.fromCompletionStage(s.close()),
+          (s, t) -> Mono.fromCompletionStage(s.close()).then(Mono.error(t)),
+          s -> Mono.fromCompletionStage(s.close()));
       //      if (flush) {
       //        em.flush();
       //      }
 
-      Uni<Integer> result = ((Mutiny.MutationQuery) query.createQuery(accessor)).executeUpdate();
+      //      Uni<Integer> result = ((Stage.MutationQuery) query.createQuery(accessor,
+      // session)).executeUpdate();
 
       //      if (clear) {
       //        em.clear();
       //      }
 
-      return result;
+      //      return result;
+    }*/
+
+    @Override
+    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+      return query
+          .map(Stage.MutationQuery.class::cast)
+          .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate())));
     }
   }
 
   static class DeleteExecution extends ReactiveJpaQueryExecution {
 
-    private final Mutiny.SessionFactory sessionFactory;
+    private final Stage.SessionFactory sessionFactory;
 
-    public DeleteExecution(Mutiny.SessionFactory sessionFactory) {
+    public DeleteExecution(Stage.SessionFactory sessionFactory) {
       this.sessionFactory = sessionFactory;
     }
 
-    @Override
-    protected Object doExecute(
-        AbstractReactiveJpaQuery jpaQuery, ReactiveJpaParametersParameterAccessor accessor) {
-      Mutiny.MutationQuery query = (Mutiny.MutationQuery) jpaQuery.createQuery(accessor);
+    /*@Override
+    protected Publisher<?> doExecute(
+        AbstractReactiveJpaQuery jpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
+      return Mono.usingWhen(
+          session,
+          s ->
+              Mono.fromSupplier(() -> jpaQuery.createQuery(accessor, s))
+                  .map(Stage.MutationQuery.class::cast)
+                  .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate()))),
+          s -> Mono.fromCompletionStage(s.close()),
+          (s, t) -> Mono.fromCompletionStage(s.close()).then(Mono.error(t)),
+          s -> Mono.fromCompletionStage(s.close()));
 
-      return query.executeUpdate();
+      //      return jpaQuery.createQuery(accessor, session).map(Stage.MutationQuery.class::cast)
+      //          .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate())));
+      //      return query.executeUpdate();
+    }*/
+
+    @Override
+    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+      return query
+          .map(Stage.MutationQuery.class::cast)
+          .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate())));
     }
   }
 
   static class ExistsExecution extends ReactiveJpaQueryExecution {
 
+    /*@Override
+    protected Publisher<?> doExecute(
+        AbstractReactiveJpaQuery query,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
+      */
+    /*Uni<List<?>> resultList =
+        ((Stage.SelectionQuery) query.createQuery(accessor, session)).getResultList();
+    return resultList.onItem().transform(l -> !l.isEmpty());*/
+    /*
+      //      return query.createQuery(accessor, session).map(Stage.SelectionQuery.class::cast)
+      //          .<List<?>>flatMap(q -> Mono.defer(() ->
+      // Mono.fromCompletionStage(q.getResultList())))
+      //          .map(CollectionUtils::isNotEmpty);
+
+      return Mono.usingWhen(
+          session,
+          s ->
+              Mono.fromSupplier(() -> query.createQuery(accessor, s))
+                  .map(Stage.SelectionQuery.class::cast)
+                  .flatMap(
+                      q ->
+                          Mono.defer(
+                              () -> {
+                                CompletionStage<List<?>> resultList = q.getResultList();
+                                return Mono.fromCompletionStage(resultList);
+                              }))
+                  .map(CollectionUtils::isNotEmpty),
+          s -> Mono.fromCompletionStage(s.close()),
+          (s, t) -> Mono.fromCompletionStage(s.close()).then(Mono.error(t)),
+          s -> Mono.fromCompletionStage(s.close()));
+    }*/
+
     @Override
-    protected Object doExecute(
-        AbstractReactiveJpaQuery query, ReactiveJpaParametersParameterAccessor accessor) {
-      Uni<List<?>> resultList =
-          ((Mutiny.SelectionQuery) query.createQuery(accessor)).getResultList();
-      return resultList.onItem().transform(l -> !l.isEmpty());
+    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+      return query
+          .map(Stage.SelectionQuery.class::cast)
+          .flatMap(
+              q ->
+                  Mono.defer(
+                      () -> {
+                        CompletionStage<List<?>> resultList = q.getResultList();
+                        return Mono.fromCompletionStage(resultList);
+                      }))
+          .map(CollectionUtils::isNotEmpty);
     }
   }
 
@@ -163,10 +300,18 @@ public abstract class ReactiveJpaQueryExecution {
       this.collectionQuery = collectionQuery;
     }
 
-    @Override
-    protected Object doExecute(
-        AbstractReactiveJpaQuery jpaQuery, ReactiveJpaParametersParameterAccessor accessor) {
+    /*@Override
+    protected Publisher<?> doExecute(
+        AbstractReactiveJpaQuery jpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
 
+      // TODO
+      return null;
+    }*/
+
+    @Override
+    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
       // TODO
       return null;
     }

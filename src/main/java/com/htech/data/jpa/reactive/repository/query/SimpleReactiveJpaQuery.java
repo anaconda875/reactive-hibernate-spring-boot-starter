@@ -1,6 +1,6 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -10,7 +10,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
 
   public SimpleReactiveJpaQuery(
       ReactiveJpaQueryMethod method,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
       QueryMethodEvaluationContextProvider evaluationContextProvider,
@@ -27,7 +27,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
 
   public SimpleReactiveJpaQuery(
       ReactiveJpaQueryMethod method,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,

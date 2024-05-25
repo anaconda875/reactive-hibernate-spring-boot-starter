@@ -1,6 +1,6 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.data.jpa.support.PageableUtils;
 import org.springframework.util.Assert;
@@ -32,7 +32,7 @@ public class ParameterBinder {
     this.useJpaForPaging = useJpaForPaging;
   }
 
-  public <T extends Mutiny.AbstractQuery> T bind(
+  public <T extends Stage.AbstractQuery> T bind(
       T jpaQuery,
       QueryParameterSetter.QueryMetadata metadata,
       JpaParametersParameterAccessor accessor) {
@@ -51,8 +51,8 @@ public class ParameterBinder {
     }
   }
 
-  Mutiny.AbstractQuery bindAndPrepare(
-      Mutiny.AbstractQuery query,
+  Stage.AbstractQuery bindAndPrepare(
+      Stage.AbstractQuery query,
       QueryParameterSetter.QueryMetadata metadata,
       JpaParametersParameterAccessor accessor) {
 
@@ -64,7 +64,7 @@ public class ParameterBinder {
       return query;
     }
 
-    if (query instanceof Mutiny.SelectionQuery<?> selectionQuery) {
+    if (query instanceof Stage.SelectionQuery<?> selectionQuery) {
       selectionQuery.setFirstResult(PageableUtils.getOffsetAsInteger(accessor.getPageable()));
       selectionQuery.setMaxResults(accessor.getPageable().getPageSize());
     }

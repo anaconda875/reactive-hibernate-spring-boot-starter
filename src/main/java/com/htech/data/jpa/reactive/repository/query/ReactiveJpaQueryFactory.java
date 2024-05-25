@@ -1,6 +1,6 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.repository.query.QueryCreationException;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
@@ -14,7 +14,7 @@ public enum ReactiveJpaQueryFactory {
 
   AbstractReactiveJpaQuery fromMethodWithQueryString(
       ReactiveJpaQueryMethod method,
-      Mutiny.SessionFactory sessionFactory,
+      Stage.SessionFactory sessionFactory,
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,

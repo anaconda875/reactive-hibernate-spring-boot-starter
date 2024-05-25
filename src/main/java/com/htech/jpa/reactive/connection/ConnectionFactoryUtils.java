@@ -1,12 +1,11 @@
 package com.htech.jpa.reactive.connection;
 
-import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
+import static org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction;
 
-import org.hibernate.reactive.mutiny.Mutiny;
-import org.hibernate.reactive.mutiny.impl.MutinySessionImpl;
+import org.hibernate.reactive.stage.Stage;
+import org.hibernate.reactive.stage.impl.StageSessionImpl;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.transaction.NoTransactionException;
-import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 import reactor.core.publisher.Mono;
 
 public class ConnectionFactoryUtils {
@@ -14,15 +13,15 @@ public class ConnectionFactoryUtils {
   private ConnectionFactoryUtils() {}
 
   public static Mono<Void> releaseConnection(
-      MutinySessionImpl con, Mutiny.SessionFactory connectionFactory) {
+      StageSessionImpl con, Stage.SessionFactory connectionFactory) {
     return doReleaseConnection(con, connectionFactory)
         .onErrorMap(
             ex -> new DataAccessResourceFailureException("Failed to close R2DBC Connection", ex));
   }
 
   public static Mono<Void> doReleaseConnection(
-      MutinySessionImpl connection, Mutiny.SessionFactory connectionFactory) {
-    return TransactionSynchronizationManager.forCurrentTransaction()
+      StageSessionImpl connection, Stage.SessionFactory connectionFactory) {
+    return forCurrentTransaction()
         .flatMap(
             synchronizationManager -> {
               ConnectionHolder conHolder =
@@ -32,18 +31,19 @@ public class ConnectionFactoryUtils {
                 conHolder.released();
                 return Mono.empty();
               }
-              return toWrapper(connection.close(), Mono.class);
+              return Mono.defer(() -> Mono.fromCompletionStage(connection.close()));
             })
         .onErrorResume(
-            NoTransactionException.class, ex -> toWrapper(connection.close(), Mono.class));
+            NoTransactionException.class,
+            ex -> Mono.defer(() -> Mono.fromCompletionStage(connection.close())));
   }
 
   private static boolean connectionEquals(
-      ConnectionHolder conHolder, MutinySessionImpl passedInCon) {
+      ConnectionHolder conHolder, StageSessionImpl passedInCon) {
     if (!conHolder.hasConnection()) {
       return false;
     }
-    MutinySessionImpl heldCon = conHolder.getConnection();
+    StageSessionImpl heldCon = conHolder.getConnection();
     // Explicitly check for identity too: for Connection handles that do not implement
     // "equals" properly).
     return (heldCon == passedInCon
@@ -51,8 +51,8 @@ public class ConnectionFactoryUtils {
         || getTargetConnection(heldCon).equals(passedInCon));
   }
 
-  public static MutinySessionImpl getTargetConnection(MutinySessionImpl con) {
-    MutinySessionImpl conToUse = con;
+  public static StageSessionImpl getTargetConnection(StageSessionImpl con) {
+    StageSessionImpl conToUse = con;
     //    while (conToUse instanceof Wrapped<?>) {
     //      conToUse = ((Wrapped<Connection>) conToUse).unwrap();
     //    }

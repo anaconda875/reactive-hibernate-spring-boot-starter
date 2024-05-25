@@ -1,17 +1,17 @@
 package com.htech.data.jpa.reactive.core;
 
-import org.hibernate.reactive.mutiny.Mutiny;
+import org.hibernate.reactive.stage.Stage;
 
 public class ReactiveJpaEntityTemplate implements ReactiveJpaEntityOperations {
 
-  protected final Mutiny.SessionFactory sessionFactory;
+  protected final Stage.SessionFactory sessionFactory;
 
-  public ReactiveJpaEntityTemplate(Mutiny.SessionFactory sessionFactory) {
+  public ReactiveJpaEntityTemplate(Stage.SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
 
   @Override
-  public Mutiny.SessionFactory getSessionFactory() {
+  public Stage.SessionFactory getSessionFactory() {
     return sessionFactory;
   }
 }

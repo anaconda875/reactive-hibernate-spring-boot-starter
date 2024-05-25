@@ -23,8 +23,8 @@ import java.util.Objects;
 import java.util.Set;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.hibernate.reactive.mutiny.Mutiny;
-import org.hibernate.reactive.mutiny.impl.MutinySessionImpl;
+import org.hibernate.reactive.stage.Stage;
+import org.hibernate.reactive.stage.impl.StageSessionImpl;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
@@ -94,8 +94,10 @@ public class ReactiveJpaRepositoryFactoryBean<
     factory.setQueryRewriterProvider(ReactiveQueryRewriterProvider.simple());
 
     //    RepositoryMetadata repositoryMetadata = factory.getRepositoryMetadata(getObjectType());
-    factory.addRepositoryProxyPostProcessor(new ValueAdapterInterceptorProxyPostProcessor());
-    factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());
+    //    factory.addRepositoryProxyPostProcessor(new ValueAdapterInterceptorProxyPostProcessor());
+    //    factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());
+    factory.addRepositoryProxyPostProcessor(
+        new SessionPostProcessor(entityOperations.getSessionFactory()));
 
     return factory;
   }
@@ -199,7 +201,7 @@ public class ReactiveJpaRepositoryFactoryBean<
 
       @Override
       public Object invoke(MethodInvocation invocation) throws Throwable {
-        //        Uni<Mutiny.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
+        //        Uni<Stage.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
         //            .entityOperations.getSessionFactory().openSession();
         //        TransactionAttributeSource tas = getTransactionAttributeSource();
         //        Class<?> targetClass =
@@ -235,20 +237,20 @@ public class ReactiveJpaRepositoryFactoryBean<
         } else {*/
         //          AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
         //          AtomicBoolean flag = new AtomicBoolean(false);
-        Uni<MutinySessionImpl> uni =
-            ReactiveJpaRepositoryFactoryBean.this
-                .entityOperations
-                .getSessionFactory()
-                .openSession()
-                .map(MutinySessionImpl.class::cast)
-            /*.flatMap(s -> {
-              try {
-                prepareInvocation((ReflectiveMethodInvocation) invocation, newArgs, s, null);
-                return Uni.createFrom().item(s);
-              } catch (Exception e) {
-                return Uni.createFrom().failure(e);
-              }
-            })*/ ;
+        Uni<StageSessionImpl> uni = Uni.createFrom().nullItem();
+        //            ReactiveJpaRepositoryFactoryBean.this
+        //                .entityOperations
+        //                .getSessionFactory()
+        //                .openSession()
+        //                .map(StageSessionImpl.class::cast)
+        /*.flatMap(s -> {
+          try {
+            prepareInvocation((ReflectiveMethodInvocation) invocation, newArgs, s, null);
+            return Uni.createFrom().item(s);
+          } catch (Exception e) {
+            return Uni.createFrom().failure(e);
+          }
+        })*/ ;
 
         Mono<Object> filter =
             forCurrentTransaction()
@@ -264,12 +266,12 @@ public class ReactiveJpaRepositoryFactoryBean<
         Mono<Boolean> transactionExists =
             filter.map(Objects::nonNull).defaultIfEmpty(Boolean.FALSE);
 
-        Mono<MutinySessionImpl> session =
+        Mono<StageSessionImpl> session =
             filter
                 .map(ConnectionHolder.class::cast)
                 .map(ConnectionHolder::getConnection)
                 .switchIfEmpty(
-                    Mono.defer(() -> (Mono<MutinySessionImpl>) toWrapper(uni, Mono.class)))
+                    Mono.defer(() -> (Mono<StageSessionImpl>) toWrapper(uni, Mono.class)))
                 .flatMap(
                     s -> {
                       try {
@@ -281,7 +283,7 @@ public class ReactiveJpaRepositoryFactoryBean<
                       }
                     })
                 .cache();
-        //          Mono<MutinySessionImpl> sessionCached = session.cache();
+        //          Mono<StageSessionImpl> sessionCached = session.cache();
 
         /*return Mono.usingWhen(sessionCached
          */
@@ -439,8 +441,8 @@ public class ReactiveJpaRepositoryFactoryBean<
       private void prepareInvocation(
           ReflectiveMethodInvocation invocation,
           Object[] newArgs,
-          Mutiny.Session session,
-          Mutiny.Transaction transaction)
+          Stage.Session session,
+          Stage.Transaction transaction)
           throws Exception {
         newArgs[newArgs.length - 2] = session;
         newArgs[newArgs.length - 1] = transaction;
