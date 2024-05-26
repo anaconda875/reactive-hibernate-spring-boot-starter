@@ -11,17 +11,20 @@ public class ReactiveAuditingEntityCallback implements BeforeSaveCallback<Object
 
   private final ObjectFactory<ReactiveIsNewAwareAuditingHandler> auditingHandlerFactory;
 
-  public ReactiveAuditingEntityCallback(ObjectFactory<ReactiveIsNewAwareAuditingHandler> auditingHandlerFactory) {
+  public ReactiveAuditingEntityCallback(
+      ObjectFactory<ReactiveIsNewAwareAuditingHandler> auditingHandlerFactory) {
     Assert.notNull(auditingHandlerFactory, "IsNewAwareAuditingHandler must not be null");
     this.auditingHandlerFactory = auditingHandlerFactory;
   }
 
   @Override
   public Publisher<Object> onBeforeConvert(Object entity) {
-    return Mono.deferContextual(c -> {
-      Mono<?> authority = c.<Mono>getOrEmpty("AUTHORITY").orElse(Mono.empty());
-      return authority;
-    }).then(auditingHandlerFactory.getObject().markAudited(entity));
+    return Mono.deferContextual(
+            c -> {
+              Mono<?> authority = c.<Mono>getOrEmpty("AUTHORITY").orElse(Mono.empty());
+              return authority;
+            })
+        .then(auditingHandlerFactory.getObject().markAudited(entity));
   }
 
   @Override
@@ -29,4 +32,3 @@ public class ReactiveAuditingEntityCallback implements BeforeSaveCallback<Object
     return 100;
   }
 }
-

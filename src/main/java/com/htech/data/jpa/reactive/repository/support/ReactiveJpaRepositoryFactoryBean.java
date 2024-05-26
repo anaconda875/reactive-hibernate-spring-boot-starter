@@ -4,7 +4,7 @@ import static com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryExecu
 import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
 import static org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction;
 
-import com.htech.data.jpa.reactive.core.ReactiveJpaEntityOperations;
+import com.htech.data.jpa.reactive.core.StageReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.DefaultReactiveJpaQueryExtractor;
 import com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryMethodFactory;
 import com.htech.data.jpa.reactive.repository.query.ReactiveQueryRewriterProvider;
@@ -66,7 +66,7 @@ public class ReactiveJpaRepositoryFactoryBean<
     implements ApplicationContextAware, BeanClassLoaderAware {
 
   private @Nullable ApplicationContext applicationContext;
-  private ReactiveJpaEntityOperations entityOperations;
+  private StageReactiveJpaEntityOperations entityOperations;
 
   private EntityPathResolver entityPathResolver;
 
@@ -98,7 +98,7 @@ public class ReactiveJpaRepositoryFactoryBean<
     //    factory.addRepositoryProxyPostProcessor(new ValueAdapterInterceptorProxyPostProcessor());
     //    factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());
     factory.addRepositoryProxyPostProcessor(
-        new SessionPostProcessor(entityOperations.getSessionFactory()));
+        new SessionPostProcessor(entityOperations.sessionFactory()));
 
     return factory;
   }
@@ -204,7 +204,7 @@ public class ReactiveJpaRepositoryFactoryBean<
       @SuppressWarnings("unchecked")
       public Object invoke(MethodInvocation invocation) throws Throwable {
         //        Uni<Stage.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
-        //            .entityOperations.getSessionFactory().openSession();
+        //            .entityOperations.sessionFactory().openSession();
         //        TransactionAttributeSource tas = getTransactionAttributeSource();
         //        Class<?> targetClass =
         //            (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis())
@@ -220,7 +220,7 @@ public class ReactiveJpaRepositoryFactoryBean<
           return toWrapper(
               ReactiveJpaRepositoryFactoryBean.this
                   .entityOperations
-                  .getSessionFactory()
+                  .sessionFactory()
                   .withSession(
                       session -> {
                         try {
@@ -242,7 +242,7 @@ public class ReactiveJpaRepositoryFactoryBean<
         Uni<StageSessionImpl> uni = Uni.createFrom().nullItem();
         //            ReactiveJpaRepositoryFactoryBean.this
         //                .entityOperations
-        //                .getSessionFactory()
+        //                .sessionFactory()
         //                .openSession()
         //                .map(StageSessionImpl.class::cast)
         /*.flatMap(s -> {
@@ -260,7 +260,7 @@ public class ReactiveJpaRepositoryFactoryBean<
                     tsm ->
                         tsm.getResource(
                             ReactiveJpaRepositoryFactoryBean.this.entityOperations
-                                .getSessionFactory()))
+                                .sessionFactory()))
                 .filter(ConnectionHolder.class::isInstance)
                 .onErrorResume(e -> Mono.empty())
                 .cache();
@@ -639,7 +639,7 @@ public class ReactiveJpaRepositoryFactoryBean<
   }
 
   //  @Autowired
-  public void setEntityOperations(@Nullable MutinyReactiveJpaEntityOperations entityOperations) {
+  public void setEntityOperations(@Nullable StageReactiveJpaEntityOperations entityOperations) {
     this.entityOperations = entityOperations;
   }
 
