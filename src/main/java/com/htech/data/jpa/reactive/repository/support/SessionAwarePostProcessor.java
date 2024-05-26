@@ -14,24 +14,24 @@ import org.springframework.data.repository.core.support.RepositoryProxyPostProce
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-public class SessionPostProcessor implements RepositoryProxyPostProcessor {
+public class SessionAwarePostProcessor implements RepositoryProxyPostProcessor {
 
   private final Stage.SessionFactory sessionFactory;
 
-  public SessionPostProcessor(Stage.SessionFactory sessionFactory) {
+  public SessionAwarePostProcessor(Stage.SessionFactory sessionFactory) {
     this.sessionFactory = sessionFactory;
   }
 
   @Override
   public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
-    factory.addAdvice(new SessionInterceptor(sessionFactory));
+    factory.addAdvice(new SessionAwareInterceptor(sessionFactory));
   }
 
-  static class SessionInterceptor implements MethodInterceptor {
+  static class SessionAwareInterceptor implements MethodInterceptor {
 
     private final Stage.SessionFactory sessionFactory;
 
-    public SessionInterceptor(Stage.SessionFactory sessionFactory) {
+    public SessionAwareInterceptor(Stage.SessionFactory sessionFactory) {
       this.sessionFactory = sessionFactory;
     }
 
