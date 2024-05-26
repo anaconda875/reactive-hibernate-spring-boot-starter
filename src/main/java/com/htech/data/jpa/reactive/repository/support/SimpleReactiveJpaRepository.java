@@ -2,9 +2,9 @@ package com.htech.data.jpa.reactive.repository.support;
 
 import static org.springframework.data.jpa.repository.query.QueryUtils.*;
 
+import com.htech.data.jpa.reactive.core.StageReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.QueryUtils;
 import com.htech.jpa.reactive.connection.SessionContextHolder;
-import io.smallrye.mutiny.Uni;
 import jakarta.persistence.criteria.*;
 import java.io.Serial;
 import java.util.*;
@@ -29,11 +29,15 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   private final JpaEntityInformation<T, ?> entityInformation;
   private final Stage.SessionFactory sessionFactory;
+  private final StageReactiveJpaEntityOperations entityOperations;
 
   public SimpleReactiveJpaRepository(
-      JpaEntityInformation<T, ?> entityInformation, Stage.SessionFactory sessionFactory) {
+      JpaEntityInformation<T, ?> entityInformation,
+      Stage.SessionFactory sessionFactory,
+      StageReactiveJpaEntityOperations entityOperations) {
     this.entityInformation = entityInformation;
     this.sessionFactory = sessionFactory;
+    this.entityOperations = entityOperations;
   }
 
   //  public static <T, ID> ReactiveJpaRepositoryImplementation<T, ID> createInstance(
@@ -78,32 +82,34 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   @Override
   public <S extends T> Mono<S> save(S entity) {
-    return SessionContextHolder.currentSession()
-        .flatMap(
-            session ->
-                Mono.defer(
-                    () ->
-                        Mono.fromCompletionStage(session.persist(entity))
-                            .then(deferFlushing(session))
-                            .thenReturn(entity)));
+    return entityOperations.persist(entity);
+    //    return SessionContextHolder.currentSession()
+    //        .flatMap(
+    //            session ->
+    //                Mono.defer(
+    //                    () ->
+    //                        Mono.fromCompletionStage(session.persist(entity))
+    //                            .then(deferFlushing(session))
+    //                            .thenReturn(entity)));
   }
 
   @Override
   public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
-    if (IterableUtils.isEmpty(entities)) {
-      return Flux.empty();
-    }
-
-    return SessionContextHolder.currentSession()
-        .flatMap(
-            session ->
-                Mono.defer(
-                    () ->
-                        Mono.fromCompletionStage(
-                                session.persist(IterableUtils.toList(entities).toArray()))
-                            .then(deferFlushing(session))
-                            .then(Mono.just(entities))))
-        .flatMapMany(Flux::fromIterable);
+    return entityOperations.persist(entities);
+    //    if (IterableUtils.isEmpty(entities)) {
+    //      return Flux.empty();
+    //    }
+    //
+    //    return SessionContextHolder.currentSession()
+    //        .flatMap(
+    //            session ->
+    //                Mono.defer(
+    //                    () ->
+    //                        Mono.fromCompletionStage(
+    //                                session.persist(IterableUtils.toList(entities).toArray()))
+    //                            .then(deferFlushing(session))
+    //                            .then(Mono.just(entities))))
+    //        .flatMapMany(Flux::fromIterable);
   }
 
   @Override
@@ -377,46 +383,49 @@ public class SimpleReactiveJpaRepository<T, ID>
     return root;
   }
 
-  @SuppressWarnings("unused")
-  interface SessionAwareReactiveJpaRepositoryImplementation<T, ID>
-      extends ReactiveJpaRepositoryImplementation<T, ID> {
-
-    <S extends T> Uni<List<S>> findAll(
-        Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    <S extends T> Uni<S> findById(
-        ID id, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    <S extends T> Uni<S> save(
-        S entity, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    <S extends T> Uni<List<S>> saveAll(
-        Iterable<S> entities, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<Boolean> existsById(ID id, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    <S extends T> Uni<List<S>> findAllById(
-        Iterable<ID> ids, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<Long> count(Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<Void> delete(T entity, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<Void> deleteById(ID id, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<Void> deleteAllById(
-        Iterable<? extends ID> ids, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<Void> deleteAll(
-        Iterable<? extends T> entities,
-        Stage.Session session,
-        @Nullable Stage.Transaction transaction);
-
-    Uni<List<T>> findAll(Sort sort, Stage.Session session, @Nullable Stage.Transaction transaction);
-
-    Uni<List<T>> findAll(
-        Pageable pageable, Stage.Session session, @Nullable Stage.Transaction transaction);
-  }
+  //  @SuppressWarnings("unused")
+  //  interface SessionAwareReactiveJpaRepositoryImplementation<T, ID>
+  //      extends ReactiveJpaRepositoryImplementation<T, ID> {
+  //
+  //    <S extends T> Uni<List<S>> findAll(
+  //        Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    <S extends T> Uni<S> findById(
+  //        ID id, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    <S extends T> Uni<S> save(
+  //        S entity, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    <S extends T> Uni<List<S>> saveAll(
+  //        Iterable<S> entities, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    Uni<Boolean> existsById(ID id, Stage.Session session, @Nullable Stage.Transaction
+  // transaction);
+  //
+  //    <S extends T> Uni<List<S>> findAllById(
+  //        Iterable<ID> ids, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    Uni<Long> count(Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    Uni<Void> delete(T entity, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    Uni<Void> deleteById(ID id, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //
+  //    Uni<Void> deleteAllById(
+  //        Iterable<? extends ID> ids, Stage.Session session, @Nullable Stage.Transaction
+  // transaction);
+  //
+  //    Uni<Void> deleteAll(
+  //        Iterable<? extends T> entities,
+  //        Stage.Session session,
+  //        @Nullable Stage.Transaction transaction);
+  //
+  //    Uni<List<T>> findAll(Sort sort, Stage.Session session, @Nullable Stage.Transaction
+  // transaction);
+  //
+  //    Uni<List<T>> findAll(
+  //        Pageable pageable, Stage.Session session, @Nullable Stage.Transaction transaction);
+  //  }
 
   //  static class InternalRepository<T, ID> extends SimpleReactiveJpaRepository<T, ID>
   //    implements SessionAwareReactiveJpaRepositoryImplementation<T, ID> {
