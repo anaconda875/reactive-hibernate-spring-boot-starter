@@ -85,7 +85,8 @@ public class ReactiveJpaRepositoryFactoryBean<
   protected RepositoryFactorySupport createRepositoryFactory() {
     ReactiveJpaRepositoryFactory factory =
         new ReactiveJpaRepositoryFactory(
-            entityOperations.getSessionFactory(),
+            entityOperations,
+            entityOperations.sessionFactory(),
             applicationContext.getBean("entityManagerFactory", EntityManagerFactory.class));
     factory.setEscapeCharacter(escapeCharacter);
     // TODO
@@ -200,6 +201,7 @@ public class ReactiveJpaRepositoryFactoryBean<
       }
 
       @Override
+      @SuppressWarnings("unchecked")
       public Object invoke(MethodInvocation invocation) throws Throwable {
         //        Uni<Stage.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
         //            .entityOperations.getSessionFactory().openSession();
@@ -637,7 +639,7 @@ public class ReactiveJpaRepositoryFactoryBean<
   }
 
   //  @Autowired
-  public void setEntityOperations(@Nullable ReactiveJpaEntityOperations entityOperations) {
+  public void setEntityOperations(@Nullable MutinyReactiveJpaEntityOperations entityOperations) {
     this.entityOperations = entityOperations;
   }
 
