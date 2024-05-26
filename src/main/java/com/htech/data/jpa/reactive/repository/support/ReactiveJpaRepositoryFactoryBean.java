@@ -1,6 +1,7 @@
 package com.htech.data.jpa.reactive.repository.support;
 
-import static com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryExecutionConverters.getDefaultConversionService;
+// import static
+// com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryExecutionConverters.getDefaultConversionService;
 import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
 import static org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction;
 
@@ -113,8 +114,9 @@ public class ReactiveJpaRepositoryFactoryBean<
 
     @Override
     public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
-      factory.addAdvice(
-          new ValueAdapterInterceptor(repositoryInformation, getDefaultConversionService()));
+      //      factory.addAdvice(
+      //          new ValueAdapterInterceptor(repositoryInformation,
+      // getDefaultConversionService()));
     }
 
     class ValueAdapterInterceptor implements MethodInterceptor {
@@ -186,7 +188,7 @@ public class ReactiveJpaRepositoryFactoryBean<
 
     @Override
     public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
-      factory.addAdvice(new SessionAwareInterceptor(repositoryInformation));
+      //      factory.addAdvice(new SessionAwareInterceptor(repositoryInformation));
     }
 
     class SessionAwareInterceptor implements MethodInterceptor {
