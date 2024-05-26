@@ -204,7 +204,7 @@ public class ReactiveJpaRepositoryFactoryBean<
       @SuppressWarnings("unchecked")
       public Object invoke(MethodInvocation invocation) throws Throwable {
         //        Uni<Stage.Session> sessionUni = ReactiveJpaRepositoryFactoryBean.this
-        //            .entityOperations.getSessionFactory().openSession();
+        //            .entityOperations.sessionFactory().openSession();
         //        TransactionAttributeSource tas = getTransactionAttributeSource();
         //        Class<?> targetClass =
         //            (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis())
@@ -220,7 +220,7 @@ public class ReactiveJpaRepositoryFactoryBean<
           return toWrapper(
               ReactiveJpaRepositoryFactoryBean.this
                   .entityOperations
-                  .getSessionFactory()
+                  .sessionFactory()
                   .withSession(
                       session -> {
                         try {
@@ -242,7 +242,7 @@ public class ReactiveJpaRepositoryFactoryBean<
         Uni<StageSessionImpl> uni = Uni.createFrom().nullItem();
         //            ReactiveJpaRepositoryFactoryBean.this
         //                .entityOperations
-        //                .getSessionFactory()
+        //                .sessionFactory()
         //                .openSession()
         //                .map(StageSessionImpl.class::cast)
         /*.flatMap(s -> {
