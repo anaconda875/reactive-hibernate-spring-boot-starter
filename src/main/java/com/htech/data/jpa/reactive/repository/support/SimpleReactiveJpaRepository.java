@@ -95,20 +95,21 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   @Override
   public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
-    if (IterableUtils.isEmpty(entities)) {
-      return Flux.empty();
-    }
-
-    return SessionContextHolder.currentSession()
-        .flatMap(
-            session ->
-                Mono.defer(
-                    () ->
-                        Mono.fromCompletionStage(
-                                session.persist(IterableUtils.toList(entities).toArray()))
-                            .then(deferFlushing(session))
-                            .then(Mono.just(entities))))
-        .flatMapMany(Flux::fromIterable);
+    return entityOperations.persist(entities);
+    //    if (IterableUtils.isEmpty(entities)) {
+    //      return Flux.empty();
+    //    }
+    //
+    //    return SessionContextHolder.currentSession()
+    //        .flatMap(
+    //            session ->
+    //                Mono.defer(
+    //                    () ->
+    //                        Mono.fromCompletionStage(
+    //                                session.persist(IterableUtils.toList(entities).toArray()))
+    //                            .then(deferFlushing(session))
+    //                            .then(Mono.just(entities))))
+    //        .flatMapMany(Flux::fromIterable);
   }
 
   @Override
