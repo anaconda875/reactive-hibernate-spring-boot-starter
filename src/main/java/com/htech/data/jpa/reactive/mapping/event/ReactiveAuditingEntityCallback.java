@@ -5,7 +5,6 @@ import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.core.Ordered;
 import org.springframework.data.auditing.ReactiveIsNewAwareAuditingHandler;
 import org.springframework.util.Assert;
-import reactor.core.publisher.Mono;
 
 public class ReactiveAuditingEntityCallback implements BeforeSaveCallback<Object>, Ordered {
 
@@ -19,12 +18,7 @@ public class ReactiveAuditingEntityCallback implements BeforeSaveCallback<Object
 
   @Override
   public Publisher<Object> onBeforeConvert(Object entity) {
-    return Mono.deferContextual(
-            c -> {
-              Mono<?> authority = c.<Mono>getOrEmpty("AUTHORITY").orElse(Mono.empty());
-              return authority;
-            })
-        .then(auditingHandlerFactory.getObject().markAudited(entity));
+    return auditingHandlerFactory.getObject().markAudited(entity);
   }
 
   @Override
