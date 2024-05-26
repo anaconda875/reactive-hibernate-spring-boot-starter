@@ -97,7 +97,9 @@ public class ReactiveJpaRepositoryFactoryBean<
     //    factory.addRepositoryProxyPostProcessor(new ValueAdapterInterceptorProxyPostProcessor());
     //    factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());
     factory.addRepositoryProxyPostProcessor(
-        new SessionPostProcessor(entityOperations.sessionFactory()));
+        new SessionAwarePostProcessor(entityOperations.sessionFactory()));
+    factory.addRepositoryProxyPostProcessor(
+        new PersistenceExceptionHandlerPostProcessor(entityOperations.sessionFactory()));
 
     return factory;
   }
@@ -182,19 +184,19 @@ public class ReactiveJpaRepositoryFactoryBean<
     }
   }
 
-  class SessionAwareProxyPostProcessor implements RepositoryProxyPostProcessor {
+  class InternalSessionAwareProxyPostProcessor implements RepositoryProxyPostProcessor {
 
     @Override
     public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
       //      factory.addAdvice(new SessionAwareInterceptor(repositoryInformation));
     }
 
-    class SessionAwareInterceptor implements MethodInterceptor {
+    class InternalSessionAwareInterceptor implements MethodInterceptor {
 
       protected final RepositoryInformation repositoryInformation;
       protected final TransactionAttributeSource tas;
 
-      protected SessionAwareInterceptor(RepositoryInformation repositoryInformation) {
+      protected InternalSessionAwareInterceptor(RepositoryInformation repositoryInformation) {
         this.repositoryInformation = repositoryInformation;
         this.tas =
             new CustomRepositoryAnnotationTransactionAttributeSource(repositoryInformation, true);
