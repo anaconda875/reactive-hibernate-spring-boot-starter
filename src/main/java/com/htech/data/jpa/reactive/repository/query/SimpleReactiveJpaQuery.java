@@ -2,7 +2,8 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 
@@ -13,7 +14,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       Stage.SessionFactory sessionFactory,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      QueryMethodEvaluationContextProvider evaluationContextProvider,
+      ReactiveExtensionAwareQueryMethodEvaluationContextProvider evaluationContextProvider,
       SpelExpressionParser parser) {
     this(
         method,
@@ -31,7 +32,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      QueryMethodEvaluationContextProvider evaluationContextProvider,
+      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
       SpelExpressionParser parser) {
 
     super(

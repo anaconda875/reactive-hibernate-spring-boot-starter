@@ -158,13 +158,11 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
       StageSessionImpl con,
       ConnectionFactoryTransactionObject transaction,
       TransactionDefinition definition) {
-    /*transaction.setMustRestoreAutoCommit(con.isAutoCommit());
-    io.r2dbc.spi.TransactionDefinition transactionDefinition = createTransactionDefinition(definition);
-    if (logger.isDebugEnabled()) {
-      logger.debug("Starting R2DBC transaction on StageSessionImpl [" + con + "] using [" + transactionDefinition + "]");
-    }*/
-    return Mono.fromCompletionStage(
-        con.getReactiveConnection().beginTransaction(/*transactionDefinition*/ ));
+    return Mono.defer(
+            () -> Mono.fromCompletionStage(con.getReactiveConnection().beginTransaction()))
+        .then(
+            Mono.defer(
+                () -> Mono.fromRunnable(() -> con.setDefaultReadOnly(definition.isReadOnly()))));
   }
 
   /*  protected io.r2dbc.spi.TransactionDefinition createTransactionDefinition(TransactionDefinition definition) {

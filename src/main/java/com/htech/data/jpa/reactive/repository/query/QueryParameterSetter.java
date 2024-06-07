@@ -6,66 +6,94 @@ import jakarta.persistence.TemporalType;
 import jakarta.persistence.criteria.ParameterExpression;
 import java.lang.reflect.Proxy;
 import java.util.*;
-import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Mono;
 
 public interface QueryParameterSetter {
 
-  void setParameter(
+  Mono<Void> setParameter(
       QueryParameterSetter.BindableQuery query,
       JpaParametersParameterAccessor accessor,
       QueryParameterSetter.ErrorHandling errorHandling);
 
-  QueryParameterSetter NOOP = (query, values, errorHandling) -> {};
+  QueryParameterSetter NOOP = (query, values, errorHandling) -> Mono.empty();
 
   class NamedOrIndexedQueryParameterSetter implements QueryParameterSetter {
 
     //    protected final boolean useIndexBasedParams;
-    protected final Function<JpaParametersParameterAccessor, Object> valueExtractor;
+    //    protected final Function<JpaParametersParameterAccessor, Object> valueExtractor;
+    protected final ParameterValueEvaluator valueEvaluator;
+    protected final ParameterBinding binding;
     protected final Parameter<?> parameter;
     protected final @Nullable TemporalType temporalType;
 
     NamedOrIndexedQueryParameterSetter(
-        Function<JpaParametersParameterAccessor, Object> valueExtractor,
+        //        Function<JpaParametersParameterAccessor, Object> valueExtractor,
+        ParameterValueEvaluator valueEvaluator,
+        ParameterBinding binding,
         Parameter<?> parameter,
         @Nullable TemporalType temporalType) {
+      Assert.notNull(valueEvaluator, "ValueEvaluator must not be null");
 
-      Assert.notNull(valueExtractor, "ValueExtractor must not be null");
-
-      this.valueExtractor = valueExtractor;
+      this.valueEvaluator = valueEvaluator;
+      this.binding = binding;
       this.parameter = parameter;
       this.temporalType = temporalType;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void setParameter(
+    public Mono<Void> setParameter(
         BindableQuery query, JpaParametersParameterAccessor accessor, ErrorHandling errorHandling) {
 
       if (temporalType != null) {
+        return Mono.empty();
         // TODO
       } else {
 
-        Object value = valueExtractor.apply(accessor);
+        return valueEvaluator
+            .evaluate(accessor)
+            .map(binding::prepare)
+            .doOnNext(
+                value -> {
+                  if (parameter instanceof ParameterExpression) {
+                    errorHandling.execute(
+                        () -> query.setParameter((Parameter<Object>) parameter, value));
+                  } else if (parameter.getName() != null) {
+                    errorHandling.execute(() -> query.setParameter(parameter.getName(), value));
 
-        if (parameter instanceof ParameterExpression) {
-          errorHandling.execute(() -> query.setParameter((Parameter<Object>) parameter, value));
-        } else if (parameter.getName() != null) {
-          errorHandling.execute(() -> query.setParameter(parameter.getName(), value));
+                  } else {
+                    Integer position = parameter.getPosition();
 
-        } else {
+                    if (position != null) {
+                      errorHandling.execute(() -> query.setParameter(position, value));
+                    }
+                  }
+                })
+            .then();
 
-          Integer position = parameter.getPosition();
+        //        if (parameter instanceof ParameterExpression) {
+        //          return errorHandling.execute(
+        //              () -> query.setParameter((Parameter<Object>) parameter, value));
+        //        } else if (parameter.getName() != null) {
+        //          return errorHandling.execute(() -> query.setParameter(parameter.getName(),
+        // value));
+        //
+        //        } else {
+        //          Integer position = parameter.getPosition();
+        //
+        //          if (position != null) {
+        //            return errorHandling.execute(() -> query.setParameter(position, value));
+        //          }
+        //        }
 
-          if (position != null) {
-            errorHandling.execute(() -> query.setParameter(position, value));
-          }
-        }
+        //        return Mono.error(
+        //            () -> new IllegalStateException("Illegal parameter " + parameter.getClass()));
       }
     }
   }
@@ -83,7 +111,14 @@ public interface QueryParameterSetter {
 
       @Override
       public void execute(Runnable block) {
-
+        //        return Mono.fromRunnable(block)
+        //            .onErrorResume(
+        //                RuntimeException.class,
+        //                rex -> {
+        //                  LOG.info("Silently ignoring", rex);
+        //                  return Mono.empty();
+        //                })
+        //            .then();
         try {
           block.run();
         } catch (RuntimeException rex) {

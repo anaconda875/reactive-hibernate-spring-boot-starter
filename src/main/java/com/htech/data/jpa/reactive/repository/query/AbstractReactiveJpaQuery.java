@@ -76,7 +76,7 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   @Nullable
   private Publisher<?> doExecute(ReactiveJpaQueryExecution execution, Object[] parameters) {
     Mono<Tuple2<ReactiveJpaParametersParameterAccessor, ResultProcessor>> tuple2 =
-        Mono.fromSupplier(() -> obtainParameterAccessor(parameters))
+        obtainParameterAccessor(parameters)
             .zipWhen(
                 a -> Mono.fromSupplier(() -> method.getResultProcessor().withDynamicProjection(a)))
             .cache();
@@ -97,7 +97,8 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    return withDynamicProjection.processResult(result, src -> src);
   }
 
-  private ReactiveJpaParametersParameterAccessor obtainParameterAccessor(Object[] parameters) {
+  private Mono<ReactiveJpaParametersParameterAccessor> obtainParameterAccessor(
+      Object[] parameters) {
 
     // TODO
     //    if (method.isNativeQuery() && PersistenceProvider.HIBERNATE.equals(provider)) {
@@ -110,7 +111,8 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    Object[] originalParams = Arrays.copyOfRange(parameters, 0, parameters.length - 2);
 
     return new ReactiveJpaParametersParameterAccessor(
-        method.getParameters(), parameters, sessionFactory /*, session, transaction*/);
+            method, method.getParameters(), parameters, sessionFactory)
+        .resolveParameters();
   }
 
   protected ReactiveJpaQueryExecution getExecution() {
@@ -148,14 +150,12 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   }
 
   protected ParameterBinder createBinder() {
-    // TODO
-    return null;
-    //    return ParameterBinderFactory.createBinder(getQueryMethod().getParameters());
+    return ParameterBinderFactory.createBinder(getQueryMethod().getParameters());
   }
 
-  protected Stage.AbstractQuery createQuery(
-      ReactiveJpaParametersParameterAccessor parameters, Stage.Session session) {
-    return doCreateQuery(parameters, method, session);
+  protected Mono<Stage.AbstractQuery> createQuery(
+      Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor parameters) {
+    return doCreateQuery(session, parameters, method);
     //    return applyLockMode(
     //        applyEntityGraphConfiguration(
     //            applyHints(doCreateQuery(parameters, method), method), method),
@@ -169,11 +169,11 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   }
 
   // may be used for PagedExecution
-  protected Stage.AbstractQuery createCountQuery(
-      ReactiveJpaParametersParameterAccessor values, Stage.Session session) {
+  protected Mono<Stage.AbstractQuery> createCountQuery(
+      Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor values) {
     //    Stage.AbstractQuery countQuery = doCreateCountQuery(values);
 
-    return doCreateCountQuery(values, session);
+    return doCreateCountQuery(session, values);
 
     //    return method.applyHintsToCountQuery() ? applyHints(countQuery, method) : countQuery;
   }
@@ -191,13 +191,13 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
         : null;*/
   }
 
-  protected abstract Stage.AbstractQuery doCreateQuery(
+  protected abstract Mono<Stage.AbstractQuery> doCreateQuery(
+      Mono<Stage.Session> session,
       ReactiveJpaParametersParameterAccessor accessor,
-      ReactiveJpaQueryMethod method,
-      Stage.Session session);
+      ReactiveJpaQueryMethod method);
 
-  protected abstract Stage.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session);
+  protected abstract Mono<Stage.AbstractQuery> doCreateCountQuery(
+      Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor);
 
   static class TupleConverter implements Converter<Object, Object> {
 

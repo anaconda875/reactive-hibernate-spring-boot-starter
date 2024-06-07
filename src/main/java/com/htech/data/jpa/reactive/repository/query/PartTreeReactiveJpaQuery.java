@@ -15,6 +15,8 @@ import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
@@ -74,18 +76,18 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
   }
 
   @Override
-  public Stage.AbstractQuery doCreateQuery(
+  public Mono<Stage.AbstractQuery> doCreateQuery(
+      Mono<Stage.Session> session,
       ReactiveJpaParametersParameterAccessor accessor,
-      ReactiveJpaQueryMethod method,
-      Stage.Session session) {
-    return query.createQuery(accessor, session);
+      ReactiveJpaQueryMethod method) {
+    return query.createQuery(session, accessor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public Stage.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
-    return /*(Stage.SelectionQuery<Long>) */ countQuery.createQuery(accessor, session);
+  public Mono<Stage.AbstractQuery> doCreateCountQuery(
+      Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
+    return /*(Stage.SelectionQuery<Long>) */ countQuery.createQuery(session, accessor);
   }
 
   @Override
@@ -187,69 +189,69 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
       }
     }
 
-    public Stage.AbstractQuery createQuery(
-        ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
-      C criteriaQuery = cachedCriteria;
-      ParameterBinder parameterBinder = cachedParameterBinder;
+    public Mono<Stage.AbstractQuery> createQuery(
+        Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
+      //      C criteriaQuery = cachedCriteria;
+      //      ParameterBinder parameterBinder = cachedParameterBinder;
 
-      /*return Mono.just(accessor)
-      .zipWhen(
-          a -> {
-            C criteriaQuery = cachedCriteria;
-            ParameterBinder parameterBinder = cachedParameterBinder;
-            if (cachedCriteria == null || accessor.hasBindableNullValue()) {
-              AbstractQueryCreator<C, ?> creator = createCreator(accessor);
-              criteriaQuery = creator.createQuery(getDynamicSort(accessor));
-              List<ParameterMetadataProvider.ParameterMetadata<?>> expressions =
-                  creator.getParameterExpressions();
-              parameterBinder = getBinder(expressions);
-            }
+      return Mono.just(accessor)
+          .zipWhen(
+              a -> {
+                C criteriaQuery = cachedCriteria;
+                ParameterBinder parameterBinder = cachedParameterBinder;
+                if (cachedCriteria == null || accessor.hasBindableNullValue()) {
+                  AbstractQueryCreator<C, ?> creator = createCreator(accessor);
+                  criteriaQuery = creator.createQuery(getDynamicSort(accessor));
+                  List<ParameterMetadataProvider.ParameterMetadata<?>> expressions =
+                      creator.getParameterExpressions();
+                  parameterBinder = getBinder(expressions);
+                }
 
-            if (parameterBinder == null) {
-              return Mono.error(() -> new IllegalStateException("ParameterBinder is null"));
-            }
+                if (parameterBinder == null) {
+                  return Mono.error(() -> new IllegalStateException("ParameterBinder is null"));
+                }
 
-            return Mono.zip(session, Mono.just(criteriaQuery), Mono.just(parameterBinder));
-          })
-      .map(
-          tuple ->
-              Tuples.of(
-                  tuple.getT1(),
-                  createQuery(tuple.getT2().getT1(), tuple.getT2().getT2()),
-                  tuple.getT2().getT3()))
-      .map(
-          tuple -> {
-            ReactiveJpaParametersParameterAccessor acs = tuple.getT1();
-            ScrollPosition scrollPosition =
-                acs.getParameters().hasScrollPositionParameter()
-                    ? acs.getScrollPosition()
-                    : null;
-            return restrictMaxResultsIfNecessary(
-                invokeBinding(tuple.getT3(), tuple.getT2(), acs, this.metadataCache),
-                scrollPosition);
-          });*/
+                return Mono.zip(session, Mono.just(criteriaQuery), Mono.just(parameterBinder));
+              })
+          .map(
+              tuple ->
+                  Tuples.of(
+                      tuple.getT1(),
+                      createQuery(tuple.getT2().getT1(), tuple.getT2().getT2()),
+                      tuple.getT2().getT3()))
+          .flatMap(
+              tuple -> {
+                ReactiveJpaParametersParameterAccessor acs = tuple.getT1();
+                ScrollPosition scrollPosition =
+                    acs.getParameters().hasScrollPositionParameter()
+                        ? acs.getScrollPosition()
+                        : null;
+                return invokeBinding(tuple.getT3(), tuple.getT2(), acs, this.metadataCache)
+                    .map(query -> restrictMaxResultsIfNecessary(query, scrollPosition));
+              });
 
-      if (cachedCriteria == null || accessor.hasBindableNullValue()) {
-        AbstractQueryCreator<C, ?> creator = createCreator(accessor);
-        criteriaQuery = creator.createQuery(getDynamicSort(accessor));
-        List<ParameterMetadataProvider.ParameterMetadata<?>> expressions =
-            creator.getParameterExpressions();
-        parameterBinder = getBinder(expressions);
-      }
-
-      if (parameterBinder == null) {
-        throw new IllegalStateException("ParameterBinder is null");
-      }
-
-      // TODO
-      Stage.AbstractQuery query = createQuery(session, criteriaQuery);
-
-      ScrollPosition scrollPosition =
-          accessor.getParameters().hasScrollPositionParameter()
-              ? accessor.getScrollPosition()
-              : null;
-      return restrictMaxResultsIfNecessary(
-          invokeBinding(parameterBinder, query, accessor, this.metadataCache), scrollPosition);
+      //      if (cachedCriteria == null || accessor.hasBindableNullValue()) {
+      //        AbstractQueryCreator<C, ?> creator = createCreator(accessor);
+      //        criteriaQuery = creator.createQuery(getDynamicSort(accessor));
+      //        List<ParameterMetadataProvider.ParameterMetadata<?>> expressions =
+      //            creator.getParameterExpressions();
+      //        parameterBinder = getBinder(expressions);
+      //      }
+      //
+      //      if (parameterBinder == null) {
+      //        throw new IllegalStateException("ParameterBinder is null");
+      //      }
+      //
+      //      // TODO
+      //      Stage.AbstractQuery query = createQuery(session, criteriaQuery);
+      //
+      //      ScrollPosition scrollPosition =
+      //          accessor.getParameters().hasScrollPositionParameter()
+      //              ? accessor.getScrollPosition()
+      //              : null;
+      //      return restrictMaxResultsIfNecessary(
+      //          invokeBinding(parameterBinder, query, accessor, this.metadataCache),
+      // scrollPosition);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -306,7 +308,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
           new ReactiveJpaCriteriaQueryCreator(tree, returnedType, builder, provider);
     }
 
-    protected Stage.AbstractQuery invokeBinding(
+    protected Mono<Stage.AbstractQuery> invokeBinding(
         ParameterBinder binder,
         Stage.AbstractQuery query,
         JpaParametersParameterAccessor accessor,
@@ -365,7 +367,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
     }
 
     @Override
-    protected Stage.AbstractQuery invokeBinding(
+    protected Mono<Stage.AbstractQuery> invokeBinding(
         ParameterBinder binder,
         Stage.AbstractQuery query,
         JpaParametersParameterAccessor accessor,

@@ -2,7 +2,7 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 
@@ -36,7 +36,7 @@ public class ParameterBinderFactory {
       ReactiveJpaParameters parameters,
       DeclaredQuery query,
       SpelExpressionParser parser,
-      QueryMethodEvaluationContextProvider evaluationContextProvider) {
+      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
 
     Assert.notNull(parameters, "ReactiveJpaParameters must not be null");
     Assert.notNull(query, "StringQuery must not be null");

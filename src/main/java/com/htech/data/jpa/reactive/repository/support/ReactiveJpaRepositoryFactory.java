@@ -19,6 +19,7 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 
 public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySupport
     implements BeanClassLoaderAware {
@@ -114,7 +115,7 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
             sessionFactory,
             queryMethodFactory,
             key,
-            evaluationContextProvider,
+            (ReactiveQueryMethodEvaluationContextProvider) evaluationContextProvider,
             queryRewriterProvider,
             escapeCharacter));
   }

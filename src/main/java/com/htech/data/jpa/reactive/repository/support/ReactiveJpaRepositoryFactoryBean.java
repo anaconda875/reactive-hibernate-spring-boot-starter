@@ -16,10 +16,7 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.hibernate.reactive.stage.Stage;
@@ -30,6 +27,7 @@ import org.springframework.aop.framework.ReflectiveMethodInvocation;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -47,6 +45,8 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
@@ -102,6 +102,12 @@ public class ReactiveJpaRepositoryFactoryBean<
         new PersistenceExceptionHandlerPostProcessor(entityOperations.sessionFactory()));
 
     return factory;
+  }
+
+  @Override
+  protected Optional<QueryMethodEvaluationContextProvider>
+      createDefaultQueryMethodEvaluationContextProvider(ListableBeanFactory beanFactory) {
+    return Optional.of(new ReactiveExtensionAwareQueryMethodEvaluationContextProvider(beanFactory));
   }
 
   class ValueAdapterInterceptorProxyPostProcessor implements RepositoryProxyPostProcessor {
