@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.repository.query.*;
 import org.springframework.lang.Nullable;
+import reactor.core.publisher.Mono;
 
 public class NamedQuery extends AbstractReactiveJpaQuery {
 
@@ -120,10 +121,10 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
   }
 
   @Override
-  protected Stage.AbstractQuery doCreateQuery(
+  protected Mono<Stage.AbstractQuery> doCreateQuery(
+      Mono<Stage.Session> session,
       ReactiveJpaParametersParameterAccessor accessor,
-      ReactiveJpaQueryMethod method,
-      Stage.Session session) {
+      ReactiveJpaQueryMethod method) {
     ReactiveJpaQueryMethod queryMethod = getQueryMethod();
     ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
@@ -141,8 +142,8 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
   }
 
   @Override
-  protected Stage.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
+  protected Mono<Stage.AbstractQuery> doCreateCountQuery(
+      Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
 
     //    Stage.AbstractQuery countQuery = null;
     //

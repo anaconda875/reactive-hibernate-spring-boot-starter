@@ -3,7 +3,7 @@ package com.htech.data.jpa.reactive.repository.query;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.repository.query.QueryCreationException;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 
@@ -18,7 +18,7 @@ public enum ReactiveJpaQueryFactory {
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      QueryMethodEvaluationContextProvider evaluationContextProvider) {
+      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
 
     if (method.isScrollQuery()) {
       throw QueryCreationException.create(

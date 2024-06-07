@@ -68,7 +68,8 @@ public abstract class ReactiveJpaQueryExecution {
       AbstractReactiveJpaQuery query,
       ReactiveJpaParametersParameterAccessor accessor,
       Mono<Stage.Session> session) {
-    return doExecute(session.map(s -> query.createQuery(accessor, s)));
+    //    return doExecute(session.map(s -> query.createQuery(accessor, s)));
+    return doExecute(query.createQuery(session, accessor));
   }
 
   protected abstract Publisher<?> doExecute(Mono<Stage.AbstractQuery> query);

@@ -7,10 +7,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.jpa.repository.query.InvalidJpaQueryMethodException;
 import org.springframework.data.repository.query.Parameters;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
+import reactor.core.publisher.Mono;
 
 public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery {
 
@@ -20,7 +21,7 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter rewriter,
-      QueryMethodEvaluationContextProvider evaluationContextProvider,
+      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
       SpelExpressionParser parser) {
 
     super(
@@ -41,24 +42,26 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
   }
 
   @Override
-  protected Stage.AbstractQuery createReactiveJpaQuery(
+  protected Mono<Stage.AbstractQuery> createReactiveJpaQuery(
+      Mono<Stage.Session> session,
       String queryString,
       ReactiveJpaQueryMethod method,
-      Stage.Session session,
       Sort sort,
       Pageable pageable,
       ReturnedType returnedType) {
-    /*return session.map(s -> {
-      Class<?> type = getTypeToQueryFor(returnedType);
-      return type == null
-        ? s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
-        : s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable), type);
-    });*/
-    Class<?> type = getTypeToQueryFor(returnedType);
-
-    return type == null
-        ? session.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
-        : session.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable), type);
+    return session.map(
+        s -> {
+          Class<?> type = getTypeToQueryFor(returnedType);
+          return type == null
+              ? s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
+              : s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable), type);
+        });
+    //    Class<?> type = getTypeToQueryFor(returnedType);
+    //
+    //    return type == null
+    //        ? session.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
+    //        : session.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable),
+    // type);
   }
 
   @Nullable

@@ -4,19 +4,21 @@ import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.QueryRewriter;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.util.Lazy;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
   protected final DeclaredQuery query;
   protected final Lazy<DeclaredQuery> countQuery;
-  protected final QueryMethodEvaluationContextProvider evaluationContextProvider;
+  protected final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
   protected final SpelExpressionParser parser;
   protected final QueryParameterSetter.QueryMetadataCache metadataCache =
       new QueryParameterSetter.QueryMetadataCache();
@@ -28,7 +30,7 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      QueryMethodEvaluationContextProvider evaluationContextProvider,
+      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
       SpelExpressionParser parser) {
 
     super(method, sessionFactory);
@@ -62,103 +64,129 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
   }
 
   @Override
-  public Stage.AbstractQuery doCreateQuery(
+  protected Mono<Stage.AbstractQuery> doCreateQuery(
+      Mono<Stage.Session> session,
       ReactiveJpaParametersParameterAccessor accessor,
-      ReactiveJpaQueryMethod method,
-      Stage.Session session) {
-    String sortedQueryString =
-        QueryEnhancerFactory.forQuery(query).applySorting(accessor.getSort(), query.getAlias());
+      ReactiveJpaQueryMethod method) {
+    //    String sortedQueryString =
+    //        QueryEnhancerFactory.forQuery(query).applySorting(accessor.getSort(),
+    // query.getAlias());
 
-    /*return Mono.zip(Mono.fromSupplier(() -> QueryEnhancerFactory.forQuery(query)
-            .applySorting(accessor.getSort(), query.getAlias())),
-        Mono.fromSupplier(() -> getQueryMethod().getResultProcessor().withDynamicProjection(accessor))
-    ).flatMap(tuple2 -> {
-      String sortedQueryString = tuple2.getT1();
-      ResultProcessor processor = tuple2.getT2();
+    return Mono.zip(
+            Mono.fromSupplier(
+                () ->
+                    QueryEnhancerFactory.forQuery(query)
+                        .applySorting(accessor.getSort(), query.getAlias())),
+            Mono.fromSupplier(
+                () -> getQueryMethod().getResultProcessor().withDynamicProjection(accessor)))
+        .flatMap(
+            tuple2 -> {
+              String sortedQueryString = tuple2.getT1();
+              ResultProcessor processor = tuple2.getT2();
 
-      return createReactiveJpaQuery(
-          sortedQueryString,
-          method,
-          session,
-          accessor.getSort(),
-          accessor.getPageable(),
-          processor.getReturnedType())
-          .zipWhen(query -> Mono.fromSupplier(() -> metadataCache.getMetadata(sortedQueryString, query)));
-    }).map(tuple2 -> {
-      Stage.AbstractQuery query = tuple2.getT1();
-      QueryParameterSetter.QueryMetadata metadata = tuple2.getT2();
-      return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
-    });*/
+              return createReactiveJpaQuery(
+                      session,
+                      sortedQueryString,
+                      method,
+                      accessor.getSort(),
+                      accessor.getPageable(),
+                      processor.getReturnedType())
+                  .zipWhen(
+                      query ->
+                          Mono.fromSupplier(
+                              () -> metadataCache.getMetadata(sortedQueryString, query)));
+            })
+        .flatMap(
+            tuple2 -> {
+              Stage.AbstractQuery query = tuple2.getT1();
+              QueryParameterSetter.QueryMetadata metadata = tuple2.getT2();
+              return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
+            });
 
-    ResultProcessor processor =
-        getQueryMethod().getResultProcessor().withDynamicProjection(accessor);
-
-    Stage.AbstractQuery query =
-        createReactiveJpaQuery(
-            sortedQueryString,
-            method,
-            session,
-            accessor.getSort(),
-            accessor.getPageable(),
-            processor.getReturnedType());
-
-    QueryParameterSetter.QueryMetadata metadata =
-        metadataCache.getMetadata(sortedQueryString, query);
+    //    ResultProcessor processor =
+    //        getQueryMethod().getResultProcessor().withDynamicProjection(accessor);
+    //
+    //    Stage.AbstractQuery query =
+    //        createReactiveJpaQuery(
+    //            session, sortedQueryString,
+    //            method,
+    //            accessor.getSort(),
+    //            accessor.getPageable(),
+    //            processor.getReturnedType());
+    //
+    //    QueryParameterSetter.QueryMetadata metadata =
+    //        metadataCache.getMetadata(sortedQueryString, query);
 
     // it is ok to reuse the binding contained in the ParameterBinder although we create a new query
     // String because the
     // parameters in the query do not change.
-    return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
+    //    return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
   }
+
+  //  private Mono<R2dbcSpELExpressionEvaluator>
+  // getSpelEvaluator(ReactiveJpaParametersParameterAccessor accessor) {
+  //
+  //    return evaluationContextProvider
+  //        .getEvaluationContextLater(getQueryMethod().getParameters(), accessor.getValues(),
+  // expressionDependencies)
+  //        .<R2dbcSpELExpressionEvaluator> map(
+  //            context -> new DefaultR2dbcSpELExpressionEvaluator(expressionParser, context))
+  //        .defaultIfEmpty(DefaultR2dbcSpELExpressionEvaluator.unsupported());
+  //  }
 
   @Override
   protected ParameterBinder createBinder() {
-
     return ParameterBinderFactory.createQueryAwareBinder(
         getQueryMethod().getParameters(), query, parser, evaluationContextProvider);
   }
 
   @Override
-  protected Stage.AbstractQuery doCreateCountQuery(
-      ReactiveJpaParametersParameterAccessor accessor, Stage.Session session) {
-    /*return session
-    .map(
-        s -> {
-          String queryString = countQuery.get().getQueryString();
-          Stage.SelectionQuery<?> query =
-              getQueryMethod().isNativeQuery() //
-                  ? s.createNativeQuery(queryString) //
-                  : s.createQuery(queryString, Long.class);
+  protected Mono<Stage.AbstractQuery> doCreateCountQuery(
+      Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
+    return session
+        .map(
+            s -> {
+              String queryString = countQuery.get().getQueryString();
+              Stage.SelectionQuery<?> query =
+                  getQueryMethod().isNativeQuery() //
+                      ? s.createNativeQuery(queryString) //
+                      : s.createQuery(queryString, Long.class);
 
-          return Tuples.of(query, metadataCache.getMetadata(queryString, query));
-        })
-    .map(
-        tuple2 -> {
-          Stage.SelectionQuery<?> query = tuple2.getT1();
-          QueryParameterSetter.QueryMetadata metadata = tuple2.getT2();
-          parameterBinder
-              .get()
-              .bind(
-                  metadata.withQuery(query),
-                  accessor,
-                  QueryParameterSetter.ErrorHandling.LENIENT);
+              return Tuples.of(query, metadataCache.getMetadata(queryString, query));
+            })
+        .flatMap(
+            tuple2 -> {
+              Stage.SelectionQuery<?> query = tuple2.getT1();
+              QueryParameterSetter.QueryMetadata metadata = tuple2.getT2();
+              return parameterBinder
+                  .get()
+                  //              .doOnNext(pb -> pb.bind(metadata.withQuery(query), accessor,
+                  // QueryParameterSetter.ErrorHandling.LENIENT))
+                  //              .thenReturn(query);
+                  .bind(
+                      metadata.withQuery(query),
+                      accessor,
+                      QueryParameterSetter.ErrorHandling.LENIENT)
+                  .thenReturn(query);
 
-          return query;
-        });*/
-    String queryString = countQuery.get().getQueryString();
-
-    Stage.AbstractQuery query =
-        getQueryMethod().isNativeQuery() //
-            ? session.createNativeQuery(queryString) //
-            : session.createQuery(queryString, Long.class);
-
-    QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(queryString, query);
-
-    parameterBinder
-        .get()
-        .bind(metadata.withQuery(query), accessor, QueryParameterSetter.ErrorHandling.LENIENT);
-
-    return query;
+              //          return query;
+            });
+    //    String queryString = countQuery.get().getQueryString();
+    //
+    //    Stage.AbstractQuery query =
+    //        getQueryMethod().isNativeQuery() //
+    //            ? session.createNativeQuery(queryString) //
+    //            : session.createQuery(queryString, Long.class);
+    //
+    //    QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(queryString,
+    // query);
+    //
+    //    parameterBinder
+    //        .get()
+    //        .bind(metadata.withQuery(query), accessor,
+    // QueryParameterSetter.ErrorHandling.LENIENT);
+    //
+    //    return query;
   }
 
   public DeclaredQuery getQuery() {
@@ -169,32 +197,43 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
     return countQuery.get();
   }
 
-  protected Stage.AbstractQuery createReactiveJpaQuery(
+  protected Mono<Stage.AbstractQuery> createReactiveJpaQuery(
+      Mono<Stage.Session> session,
       String queryString,
       ReactiveJpaQueryMethod method,
-      Stage.Session session,
       Sort sort,
       @Nullable Pageable pageable,
       ReturnedType returnedType) {
-    if (method.isModifyingQuery()) {
-      return createReactiveJpaQueryForModifying(
-          queryString, method, session, sort, pageable, returnedType);
-    }
-    if (this.query.hasConstructorExpression() || this.query.isDefaultProjection()) {
-      return session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable));
-    }
+    //    if (method.isModifyingQuery()) {
+    //      return createReactiveJpaQueryForModifying(
+    //          queryString, method, session, sort, pageable, returnedType);
+    //    }
+    //    if (this.query.hasConstructorExpression() || this.query.isDefaultProjection()) {
+    //      return session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable));
+    //    }
+    //
+    //    Class<?> typeToRead = getTypeToRead(returnedType);
+    //
+    //    return typeToRead == null
+    //        ? session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
+    //        : session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable),
+    // typeToRead);
+    return session.map(
+        s -> {
+          if (method.isModifyingQuery()) {
+            return createReactiveJpaQueryForModifying(
+                queryString, method, s, sort, pageable, returnedType);
+          }
 
-    Class<?> typeToRead = getTypeToRead(returnedType);
+          if (this.query.hasConstructorExpression() || this.query.isDefaultProjection()) {
+            return s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable));
+          }
 
-    return typeToRead == null
-        ? session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
-        : session.createQuery(potentiallyRewriteQuery(queryString, sort, pageable), typeToRead);
-    /*return session.map(s -> {
-      Class<?> typeToRead = getTypeToRead(returnedType);
-      return typeToRead == null
-          ? s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
-          : s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable), typeToRead);
-    });*/
+          Class<?> typeToRead = getTypeToRead(returnedType);
+          return typeToRead == null
+              ? s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
+              : s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable), typeToRead);
+        });
   }
 
   private Stage.AbstractQuery createReactiveJpaQueryForModifying(

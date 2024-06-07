@@ -10,10 +10,7 @@ import org.springframework.data.jpa.repository.query.*;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.query.QueryLookupStrategy;
-import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.*;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -29,7 +26,7 @@ public class ReactiveJpaQueryLookupStrategy {
       Stage.SessionFactory sessionFactory,
       ReactiveJpaQueryMethodFactory queryMethodFactory,
       @Nullable QueryLookupStrategy.Key key,
-      QueryMethodEvaluationContextProvider evaluationContextProvider,
+      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
       ReactiveQueryRewriterProvider queryRewriterProvider,
       EscapeCharacter escape) {
 
@@ -42,6 +39,7 @@ public class ReactiveJpaQueryLookupStrategy {
             entityManagerFactory,
             sessionFactory,
             queryMethodFactory,
+            evaluationContextProvider,
             queryRewriterProvider,
             escape);
       case USE_DECLARED_QUERY:
@@ -55,6 +53,7 @@ public class ReactiveJpaQueryLookupStrategy {
                 entityManagerFactory,
                 sessionFactory,
                 queryMethodFactory,
+                evaluationContextProvider,
                 queryRewriterProvider,
                 escape),
             new DeclaredQueryLookupStrategy(
@@ -111,17 +110,20 @@ public class ReactiveJpaQueryLookupStrategy {
   static class CreateQueryLookupStrategy extends AbstractQueryLookupStrategy {
 
     protected final EntityManagerFactory entityManagerFactory;
+    protected final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
     protected final EscapeCharacter escape;
 
     public CreateQueryLookupStrategy(
         EntityManagerFactory entityManagerFactory,
         Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
+        ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
         ReactiveQueryRewriterProvider queryRewriterProvider,
         EscapeCharacter escape) {
 
       super(sessionFactory, queryMethodFactory, queryRewriterProvider);
       this.entityManagerFactory = entityManagerFactory;
+      this.evaluationContextProvider = evaluationContextProvider;
       this.escape = escape;
     }
 
@@ -137,16 +139,15 @@ public class ReactiveJpaQueryLookupStrategy {
 
   static class DeclaredQueryLookupStrategy extends AbstractQueryLookupStrategy {
 
-    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+    private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
 
     public DeclaredQueryLookupStrategy(
         Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
-        QueryMethodEvaluationContextProvider evaluationContextProvider,
+        ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
         ReactiveQueryRewriterProvider queryRewriterProvider) {
 
       super(sessionFactory, queryMethodFactory, queryRewriterProvider);
-
       this.evaluationContextProvider = evaluationContextProvider;
     }
 
