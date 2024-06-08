@@ -81,6 +81,12 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   @Override
+  public Mono<T> getReferenceById(ID id) {
+    return SessionContextHolder.currentSession()
+        .map(session -> session.getReference(entityInformation.getJavaType(), id));
+  }
+
+  @Override
   public <S extends T> Mono<S> save(S entity) {
     return entityOperations.persist(entity);
     //    return SessionContextHolder.currentSession()
@@ -263,6 +269,11 @@ public class SimpleReactiveJpaRepository<T, ID>
     return Flux.concat(
             StreamSupport.stream(entities.spliterator(), false).map(this::delete).toList())
         .then();
+  }
+
+  @Override
+  public Mono<Void> deleteAll() {
+    return findAll().concatMap(this::delete).then();
   }
 
   @Override

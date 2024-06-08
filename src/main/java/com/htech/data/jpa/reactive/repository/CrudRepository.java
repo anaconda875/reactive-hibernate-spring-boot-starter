@@ -14,6 +14,8 @@ public interface CrudRepository<T, ID> extends Repository<T, ID> {
   //  Uni<T> findById(ID id);
   <S extends T> Mono<S> findById(ID id);
 
+  Mono<T> getReferenceById(ID id);
+
   @Transactional
   @Modifying
   <S extends T> Mono<S> save(S entity);
@@ -38,4 +40,7 @@ public interface CrudRepository<T, ID> extends Repository<T, ID> {
 
   @Transactional
   Mono<Void> deleteAll(Iterable<? extends T> entities);
+
+  @Transactional
+  Mono<Void> deleteAll();
 }
