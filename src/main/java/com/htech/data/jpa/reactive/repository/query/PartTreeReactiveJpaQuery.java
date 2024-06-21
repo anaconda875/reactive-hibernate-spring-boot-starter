@@ -103,19 +103,12 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
   }
 
   private static void validate(PartTree tree, ReactiveJpaParameters parameters, String methodName) {
-
     int argCount = 0;
-
     Iterable<Part> parts = () -> tree.stream().flatMap(Streamable::stream).iterator();
-
     for (Part part : parts) {
-
       int numberOfArguments = part.getNumberOfArguments();
-
       for (int i = 0; i < numberOfArguments; i++) {
-
         throwExceptionOnArgumentMismatch(methodName, part, parameters, argCount);
-
         argCount++;
       }
     }
@@ -123,7 +116,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
   private static void throwExceptionOnArgumentMismatch(
       String methodName, Part part, ReactiveJpaParameters parameters, int index) {
-
     Part.Type type = part.getType();
     String property = part.getProperty().toDotPath();
 

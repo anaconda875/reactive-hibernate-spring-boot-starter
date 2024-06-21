@@ -164,7 +164,6 @@ public class ReactiveJpaQueryLookupStrategy {
       }
 
       if (StringUtils.hasText(method.getAnnotatedQuery())) {
-
         if (method.hasAnnotatedQueryName()) {
           LOG.warn(
               String.format(
@@ -204,7 +203,28 @@ public class ReactiveJpaQueryLookupStrategy {
         ReactiveJpaQueryMethod method,
         NamedQueries namedQueries,
         Stage.SessionFactory sessionFactory) {
+      if (StringUtils.hasText(method.getCountQuery())) {
+        return method.getCountQuery();
+      }
+
       // TODO
+      //      String queryName = method.getNamedCountQueryName();
+      //
+      //      if (!StringUtils.hasText(queryName)) {
+      //        return method.getCountQuery();
+      //      }
+
+      //      if (namedQueries.hasQuery(queryName)) {
+      //        return namedQueries.getQuery(queryName);
+      //      }
+
+      //      boolean namedQuery =
+      // org.springframework.data.jpa.repository.query.NamedQuery.hasNamedQuery(em, queryName);
+      //
+      //      if (namedQuery) {
+      //        return
+      // method.getQueryExtractor().extractQueryString(em.createNamedQuery(queryName));
+      //      }
 
       return null;
     }
