@@ -50,6 +50,8 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
                 return new ReactiveJpaQueryExecution.ProcedureExecution(method.isCollectionQuery());
               } else*/ if (method.isCollectionQuery()) {
                 return new ReactiveJpaQueryExecution.CollectionExecution();
+              } else if (method.isPageQuery()) {
+                return new ReactiveJpaQueryExecution.PagedExecution();
               } else if (method.isModifyingQuery()) {
                 return null;
               } else {
@@ -116,7 +118,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   }
 
   protected ReactiveJpaQueryExecution getExecution() {
-
     ReactiveJpaQueryExecution execution = this.execution.getNullable();
 
     if (execution != null) {

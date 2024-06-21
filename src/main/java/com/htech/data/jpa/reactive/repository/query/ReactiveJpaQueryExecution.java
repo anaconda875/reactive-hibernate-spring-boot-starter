@@ -8,6 +8,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -69,15 +70,23 @@ public abstract class ReactiveJpaQueryExecution {
       ReactiveJpaParametersParameterAccessor accessor,
       Mono<Stage.Session> session) {
     //    return doExecute(session.map(s -> query.createQuery(accessor, s)));
-    return doExecute(query.createQuery(session, accessor));
+    return doExecute(query.createQuery(session, accessor), query, accessor, session);
   }
 
-  protected abstract Publisher<?> doExecute(Mono<Stage.AbstractQuery> query);
+  protected abstract Publisher<?> doExecute(
+      Mono<Stage.AbstractQuery> query,
+      AbstractReactiveJpaQuery reactiveJpaQuery,
+      ReactiveJpaParametersParameterAccessor accessor,
+      Mono<Stage.Session> session);
 
   static class CollectionExecution extends ReactiveJpaQueryExecution {
 
     @Override
-    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
       return query
           .map(Stage.SelectionQuery.class::cast)
           .flatMap(
@@ -136,10 +145,44 @@ public abstract class ReactiveJpaQueryExecution {
     }*/
 
     @Override
-    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
       return query
           .map(Stage.SelectionQuery.class::cast)
           .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.getSingleResult())));
+    }
+  }
+
+  static class PagedExecution extends ReactiveJpaQueryExecution {
+
+    @Override
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
+      return query
+          .map(Stage.SelectionQuery.class::cast)
+          .flatMap(
+              q -> {
+                CompletionStage<List<?>> list = q.getResultList();
+                return Mono.fromCompletionStage(list);
+              })
+          .zipWhen(
+              __ ->
+                  reactiveJpaQuery
+                      .createCountQuery(session, accessor)
+                      .map(Stage.SelectionQuery.class::cast)
+                      .flatMap(
+                          q -> {
+                            CompletionStage<List<Long>> resultList = q.getResultList();
+                            return Mono.fromCompletionStage(resultList);
+                          })
+                      .map(l -> l.stream().reduce(0L, Long::sum)))
+          .map(t -> PageableExecutionUtils.getPage(t.getT1(), accessor.getPageable(), t::getT2));
     }
   }
 
@@ -197,7 +240,11 @@ public abstract class ReactiveJpaQueryExecution {
     }*/
 
     @Override
-    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
       return query
           .map(Stage.MutationQuery.class::cast)
           .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate())));
@@ -233,7 +280,11 @@ public abstract class ReactiveJpaQueryExecution {
     }*/
 
     @Override
-    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
       return query
           .map(Stage.MutationQuery.class::cast)
           .flatMap(q -> Mono.defer(() -> Mono.fromCompletionStage(q.executeUpdate())));
@@ -276,7 +327,11 @@ public abstract class ReactiveJpaQueryExecution {
     }*/
 
     @Override
-    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
       return query
           .map(Stage.SelectionQuery.class::cast)
           .flatMap(
@@ -312,7 +367,11 @@ public abstract class ReactiveJpaQueryExecution {
     }*/
 
     @Override
-    protected Publisher<?> doExecute(Mono<Stage.AbstractQuery> query) {
+    protected Publisher<?> doExecute(
+        Mono<Stage.AbstractQuery> query,
+        AbstractReactiveJpaQuery reactiveJpaQuery,
+        ReactiveJpaParametersParameterAccessor accessor,
+        Mono<Stage.Session> session) {
       // TODO
       return null;
     }

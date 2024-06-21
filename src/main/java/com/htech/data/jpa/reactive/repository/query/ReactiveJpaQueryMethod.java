@@ -9,6 +9,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.jpa.repository.query.*;
+import org.springframework.data.jpa.repository.query.Meta;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
@@ -133,7 +134,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   }
 
   private void assertParameterNamesInAnnotatedQuery() {
-
     String annotatedQuery = getAnnotatedQuery();
 
     if (!DeclaredQuery.of(annotatedQuery, this.isNativeQuery.get()).hasNamedParameter()) {
@@ -141,7 +141,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     }
 
     for (Parameter parameter : getParameters()) {
-
       if (!parameter.isNamedParameter()) {
         continue;
       }
@@ -170,7 +169,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
 
   @SuppressWarnings("unchecked")
   private <A extends Annotation> Optional<A> doFindAnnotation(Class<A> annotationType) {
-
     return (Optional<A>)
         this.annotationCache.computeIfAbsent(
             annotationType,
@@ -178,7 +176,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   }
 
   List<QueryHint> getHints() {
-
     QueryHints hints = this.queryHints.getNullable();
     if (hints != null) {
       return Arrays.asList(hints.value());
@@ -198,7 +195,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   }
 
   boolean applyHintsToCountQuery() {
-
     QueryHints hints = this.queryHints.getNullable();
     return hints != null ? hints.forCounting() : false;
   }
@@ -220,15 +216,13 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return doFindAnnotation(org.springframework.data.jpa.repository.Meta.class).orElse(null);
   }
 
-  public org.springframework.data.jpa.repository.query.Meta getQueryMetaAttributes() {
-
+  public Meta getQueryMetaAttributes() {
     org.springframework.data.jpa.repository.Meta meta = getMetaAnnotation();
     if (meta == null) {
-      return new org.springframework.data.jpa.repository.query.Meta();
+      return new Meta();
     }
 
-    org.springframework.data.jpa.repository.query.Meta metaAttributes =
-        new org.springframework.data.jpa.repository.query.Meta();
+    Meta metaAttributes = new Meta();
 
     if (StringUtils.hasText(meta.comment())) {
       metaAttributes.setComment(meta.comment());
@@ -239,7 +233,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
 
   @Nullable
   public String getAnnotatedQuery() {
-
     String query = getAnnotationValue("value", String.class);
     return StringUtils.hasText(query) ? query : null;
   }
@@ -249,7 +242,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   }
 
   public String getRequiredAnnotatedQuery() throws IllegalStateException {
-
     String query = getAnnotatedQuery();
 
     if (query != null) {
@@ -262,14 +254,12 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
 
   @Nullable
   public String getCountQuery() {
-
     String countQuery = getAnnotationValue("countQuery", String.class);
     return StringUtils.hasText(countQuery) ? countQuery : null;
   }
 
   @Nullable
   String getCountQueryProjection() {
-
     String countProjection = getAnnotationValue("countProjection", String.class);
     return StringUtils.hasText(countProjection) ? countProjection : null;
   }
@@ -280,7 +270,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
 
   @Override
   public String getNamedQueryName() {
-
     String annotatedName = getAnnotationValue("name", String.class);
     return StringUtils.hasText(annotatedName) ? annotatedName : super.getNamedQueryName();
   }
@@ -329,10 +318,10 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return this.isCollectionQuery.get();
   }
 
-  @Override
-  public boolean isStreamQuery() {
-    return true;
-  }
+  //  @Override
+  //  public boolean isStreamQuery() {
+  //    return true;
+  //  }
 
   public boolean isProcedureQuery() {
     return this.isProcedureQuery.get();

@@ -12,11 +12,14 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.StreamSupport;
 import org.apache.commons.collections4.IterableUtils;
 import org.hibernate.reactive.stage.Stage;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.support.PageableUtils;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;
@@ -290,26 +293,25 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   @Override
-  public Flux<T> findAll(Pageable pageable) {
+  public Mono<Page<T>> findAll(Pageable pageable) {
     if (pageable.isUnpaged()) {
-      return findAll();
+      return findAll().collectList().map(PageImpl::new);
     }
 
     return findAll(SessionContextHolder.currentSession(), null, pageable);
   }
 
-  public Flux<T> findAll(Mono<Stage.Session> session, Specification<T> spec, Pageable pageable) {
-    return session
-        .flatMap(
-            s ->
-                Mono.defer(
-                    () -> {
-                      Stage.SelectionQuery<T> query = getQuery(s, spec, pageable);
-                      return pageable.isUnpaged()
-                          ? Mono.fromCompletionStage(query.getResultList())
-                          : readPage(query, entityInformation.getJavaType(), pageable, spec);
-                    }))
-        .flatMapMany(Flux::fromIterable);
+  public Mono<Page<T>> findAll(
+      Mono<Stage.Session> session, Specification<T> spec, Pageable pageable) {
+    return session.flatMap(
+        s ->
+            Mono.defer(
+                () -> {
+                  Stage.SelectionQuery<T> query = getQuery(s, spec, pageable);
+                  return pageable.isUnpaged()
+                      ? Mono.fromCompletionStage(query.getResultList()).map(PageImpl::new)
+                      : readPage(query, entityInformation.getJavaType(), pageable, spec, s);
+                }));
   }
 
   private static Mono<Void> deferRemoving(Stage.Session session, Object e) {
@@ -320,14 +322,20 @@ public class SimpleReactiveJpaRepository<T, ID>
     return Mono.defer(() -> Mono.fromCompletionStage(session.flush()));
   }
 
-  private Mono<List<T>> readPage(
-      Stage.SelectionQuery<T> query, Class<T> javaType, Pageable pageable, Specification<T> spec) {
+  private Mono<Page<T>> readPage(
+      Stage.SelectionQuery<T> query,
+      Class<T> javaType,
+      Pageable pageable,
+      Specification<T> spec,
+      Stage.Session session) {
     if (pageable.isPaged()) {
       query.setFirstResult(PageableUtils.getOffsetAsInteger(pageable));
       query.setMaxResults(pageable.getPageSize());
     }
 
-    return Mono.defer(() -> Mono.fromCompletionStage(query.getResultList()));
+    return Mono.defer(() -> Mono.fromCompletionStage(query.getResultList()))
+        .zipWhen(__ -> executeCountQuery(getCountQuery(spec, javaType, session)))
+        .map(t -> PageableExecutionUtils.getPage(t.getT1(), pageable, t::getT2));
   }
 
   protected Stage.SelectionQuery<T> getQuery(
@@ -339,6 +347,25 @@ public class SimpleReactiveJpaRepository<T, ID>
   private String getCountQueryString() {
     String countQuery = String.format(COUNT_QUERY_STRING, "*", "%s");
     return getQueryString(countQuery, entityInformation.getEntityName());
+  }
+
+  protected <S extends T> Stage.SelectionQuery<Long> getCountQuery(
+      @Nullable Specification<S> spec, Class<S> domainClass, Stage.Session session) {
+    CriteriaBuilder builder = sessionFactory.getCriteriaBuilder();
+    CriteriaQuery<Long> query = builder.createQuery(Long.class);
+
+    Root<S> root = applySpecificationToCriteria(spec, domainClass, query);
+
+    if (query.isDistinct()) {
+      query.select(builder.countDistinct(root));
+    } else {
+      query.select(builder.count(root));
+    }
+
+    // Remove all Orders the Specifications might have applied
+    query.orderBy(Collections.emptyList());
+
+    return applyRepositoryMethodMetadataForCount(session.createQuery(query));
   }
 
   protected Stage.SelectionQuery<T> getQuery(
@@ -359,6 +386,30 @@ public class SimpleReactiveJpaRepository<T, ID>
     }
 
     return applyRepositoryMethodMetadata(session.createQuery(query));
+  }
+
+  private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadataForCount(
+      Stage.SelectionQuery<S> query) {
+    // TODO
+    //    if (metadata == null) {
+    //      return query;
+    //    }
+    //
+    //    applyQueryHintsForCount(query);
+
+    return query;
+  }
+
+  private static Mono<Long> executeCountQuery(Stage.SelectionQuery<Long> query) {
+    return Mono.defer(() -> Mono.fromCompletionStage(query.getResultList()))
+        .map(l -> l.stream().reduce(0L, Long::sum));
+    //    long total = 0L;
+    //
+    //    for (Long element : totals) {
+    //      total += element == null ? 0 : element;
+    //    }
+    //
+    //    return total;
   }
 
   private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadata(Stage.SelectionQuery<S> query) {
@@ -851,7 +902,8 @@ public class SimpleReactiveJpaRepository<T, ID>
     public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
       Path<?> path = root.get(entityInformation.getIdAttribute());
       parameter =
-          (ParameterExpression<Collection<?>>) (ParameterExpression) cb.parameter(Collection.class);
+          (ParameterExpression<Collection<?>>)
+              (ParameterExpression<?>) cb.parameter(Collection.class);
       return path.in(parameter);
     }
   }
