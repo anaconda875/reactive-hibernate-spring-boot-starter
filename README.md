@@ -2,11 +2,12 @@
 ### Some features:
 1. Useful Crud and Paging/Sorting methods (just like spring-data-jpa)
 2. Custom query methods (findBy*And*OrderBy*, @Query("FROM Abc")), native queries are also supported
-3. Support @Transactional (readOnly, rollbackFor, timeout, noRollbackFor, ...)
-4. Support @Modifying, @Param
-5. Support spEL
-6. Auto-config
-7. Of course, it is compatible with Webflux
+3. Support Pagination
+4. Support @Transactional (readOnly, rollbackFor, timeout, noRollbackFor, ...)
+5. Support @Modifying, @Param
+6. Support spEL
+7. Auto-config
+8. Of course, it is compatible with Webflux
 
 ### Some remaining things:
 1. EntityGraph
