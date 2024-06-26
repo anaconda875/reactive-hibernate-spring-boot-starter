@@ -10,6 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
+import org.springframework.data.util.NullableWrapperConverters;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
@@ -61,17 +62,24 @@ public interface QueryParameterSetter {
             .map(binding::prepare)
             .doOnNext(
                 value -> {
+                  Object unwrapped;
+                  if (NullableWrapperConverters.supports(value.getClass())) {
+                    unwrapped = NullableWrapperConverters.unwrap(value);
+                  } else {
+                    unwrapped = value;
+                  }
+
                   if (parameter instanceof ParameterExpression) {
                     errorHandling.execute(
-                        () -> query.setParameter((Parameter<Object>) parameter, value));
+                        () -> query.setParameter((Parameter<Object>) parameter, unwrapped));
                   } else if (parameter.getName() != null) {
-                    errorHandling.execute(() -> query.setParameter(parameter.getName(), value));
+                    errorHandling.execute(() -> query.setParameter(parameter.getName(), unwrapped));
 
                   } else {
                     Integer position = parameter.getPosition();
 
                     if (position != null) {
-                      errorHandling.execute(() -> query.setParameter(position, value));
+                      errorHandling.execute(() -> query.setParameter(position, unwrapped));
                     }
                   }
                 })

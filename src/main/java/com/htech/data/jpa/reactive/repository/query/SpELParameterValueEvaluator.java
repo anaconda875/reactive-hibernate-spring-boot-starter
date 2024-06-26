@@ -1,5 +1,6 @@
 package com.htech.data.jpa.reactive.repository.query;
 
+import java.util.Optional;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
@@ -22,9 +23,9 @@ public class SpELParameterValueEvaluator implements ParameterValueEvaluator {
   }
 
   @Override
-  public Mono<Object> evaluate(JpaParametersParameterAccessor accessor) {
+  public Mono<Optional<Object>> evaluate(JpaParametersParameterAccessor accessor) {
     return evaluationContextProvider
         .getEvaluationContextLater(parameters, accessor.getValues())
-        .map(context -> expression.getValue(context, Object.class));
+        .map(context -> Optional.ofNullable(expression.getValue(context, Object.class)));
   }
 }
