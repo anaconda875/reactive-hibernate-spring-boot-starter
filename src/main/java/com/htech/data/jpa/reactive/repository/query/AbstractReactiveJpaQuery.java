@@ -179,10 +179,9 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    return method.applyHintsToCountQuery() ? applyHints(countQuery, method) : countQuery;
   }
 
-  @Nullable
-  protected Class<?> getTypeToRead(ReturnedType returnedType) {
+  protected Optional<Class<?>> getTypeToRead(ReturnedType returnedType) {
     // TODO
-    return null;
+    return Optional.empty();
     /*if (PersistenceProvider.ECLIPSELINK.equals(provider)) {
       return null;
     }
