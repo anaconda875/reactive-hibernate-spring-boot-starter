@@ -17,7 +17,6 @@ public abstract class QueryParameterSetterFactory {
   abstract QueryParameterSetter create(ParameterBinding binding, DeclaredQuery declaredQuery);
 
   static QueryParameterSetterFactory basic(ReactiveJpaParameters parameters) {
-
     Assert.notNull(parameters, "JpaParameters must not be null");
 
     return new QueryParameterSetterFactory.BasicQueryParameterSetterFactory(parameters);
@@ -89,7 +88,6 @@ public abstract class QueryParameterSetterFactory {
   static ReactiveJpaParameters.JpaParameter findParameterForBinding(
       Parameters<ReactiveJpaParameters, ReactiveJpaParameters.JpaParameter> parameters,
       int parameterIndex) {
-
     ReactiveJpaParameters bindableParameters = parameters.getBindableParameters();
 
     Assert.isTrue( //
@@ -185,7 +183,6 @@ public abstract class QueryParameterSetterFactory {
     private final ReactiveJpaParameters parameters;
 
     BasicQueryParameterSetterFactory(ReactiveJpaParameters parameters) {
-
       Assert.notNull(parameters, "JpaParameters must not be null");
 
       this.parameters = parameters;
@@ -193,7 +190,6 @@ public abstract class QueryParameterSetterFactory {
 
     @Override
     public QueryParameterSetter create(ParameterBinding binding, DeclaredQuery declaredQuery) {
-
       Assert.notNull(binding, "Binding must not be null");
 
       ReactiveJpaParameters.JpaParameter parameter;
@@ -286,7 +282,6 @@ public abstract class QueryParameterSetterFactory {
 
     static jakarta.persistence.Parameter<?> of(
         @Nullable ReactiveJpaParameters.JpaParameter parameter, ParameterBinding binding) {
-
       Class<?> type = parameter == null ? Object.class : parameter.getType();
 
       return new QueryParameterSetterFactory.ParameterImpl<>(binding.getIdentifier(), type);

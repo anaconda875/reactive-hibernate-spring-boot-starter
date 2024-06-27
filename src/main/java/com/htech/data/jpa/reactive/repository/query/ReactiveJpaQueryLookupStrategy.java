@@ -44,7 +44,11 @@ public class ReactiveJpaQueryLookupStrategy {
             escape);
       case USE_DECLARED_QUERY:
         return new DeclaredQueryLookupStrategy(
-            sessionFactory, queryMethodFactory, evaluationContextProvider, queryRewriterProvider);
+            entityManagerFactory,
+            sessionFactory,
+            queryMethodFactory,
+            evaluationContextProvider,
+            queryRewriterProvider);
       case CREATE_IF_NOT_FOUND:
         return new CreateIfNotFoundQueryLookupStrategy(
             sessionFactory,
@@ -57,6 +61,7 @@ public class ReactiveJpaQueryLookupStrategy {
                 queryRewriterProvider,
                 escape),
             new DeclaredQueryLookupStrategy(
+                entityManagerFactory,
                 sessionFactory,
                 queryMethodFactory,
                 evaluationContextProvider,
@@ -139,15 +144,18 @@ public class ReactiveJpaQueryLookupStrategy {
 
   static class DeclaredQueryLookupStrategy extends AbstractQueryLookupStrategy {
 
+    private final EntityManagerFactory entityManagerFactory;
     private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
 
     public DeclaredQueryLookupStrategy(
+        EntityManagerFactory entityManagerFactory,
         Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
         ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
         ReactiveQueryRewriterProvider queryRewriterProvider) {
 
       super(sessionFactory, queryMethodFactory, queryRewriterProvider);
+      this.entityManagerFactory = entityManagerFactory;
       this.evaluationContextProvider = evaluationContextProvider;
     }
 
@@ -191,7 +199,7 @@ public class ReactiveJpaQueryLookupStrategy {
             evaluationContextProvider);
       }
 
-      RepositoryQuery query = NamedQuery.lookupFrom(method, sessionFactory);
+      RepositoryQuery query = NamedQuery.lookupFrom(method, sessionFactory, entityManagerFactory);
 
       return query != null //
           ? query //

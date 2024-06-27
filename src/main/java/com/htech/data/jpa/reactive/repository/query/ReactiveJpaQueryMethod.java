@@ -61,7 +61,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
       RepositoryMetadata metadata,
       ProjectionFactory factory,
       ReactiveJpaQueryExtractor extractor) {
-
     super(method, metadata, factory);
 
     Assert.notNull(method, "Method must not be null");
@@ -274,10 +273,10 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return StringUtils.hasText(annotatedName) ? annotatedName : super.getNamedQueryName();
   }
 
-  //  String getNamedCountQueryName() {
-  //    String annotatedName = getAnnotationValue("countName", String.class);
-  //    return StringUtils.hasText(annotatedName) ? annotatedName : getNamedQueryName() + ".count";
-  //  }
+  String getNamedCountQueryName() {
+    String annotatedName = getAnnotationValue("countName", String.class);
+    return StringUtils.hasText(annotatedName) ? annotatedName : getNamedQueryName() + ".count";
+  }
 
   boolean getFlushAutomatically() {
     return getMergedOrDefaultAnnotationValue("flushAutomatically", Modifying.class, Boolean.class);

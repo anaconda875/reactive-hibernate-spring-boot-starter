@@ -1,5 +1,6 @@
 package com.htech.data.jpa.reactive.repository.query;
 
+import java.util.Optional;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -229,10 +230,11 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
             return s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable));
           }
 
-          Class<?> typeToRead = getTypeToRead(returnedType);
-          return typeToRead == null
+          Optional<Class<?>> typeToRead = getTypeToRead(returnedType);
+          return typeToRead.isEmpty()
               ? s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable)) //
-              : s.createQuery(potentiallyRewriteQuery(queryString, sort, pageable), typeToRead);
+              : s.createQuery(
+                  potentiallyRewriteQuery(queryString, sort, pageable), typeToRead.get());
         });
   }
 

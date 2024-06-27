@@ -9,7 +9,6 @@ import org.springframework.util.Assert;
 public class ParameterBinderFactory {
 
   static ParameterBinder createBinder(ReactiveJpaParameters parameters) {
-
     Assert.notNull(parameters, "ReactiveJpaParameters must not be null");
 
     QueryParameterSetterFactory setterFactory = QueryParameterSetterFactory.basic(parameters);
@@ -89,7 +88,6 @@ public class ParameterBinderFactory {
       List<ParameterBinding> parameterBindings,
       DeclaredQuery declaredQuery,
       QueryParameterSetterFactory... strategies) {
-
     List<QueryParameterSetter> setters = new ArrayList<>(parameterBindings.size());
     for (ParameterBinding parameterBinding : parameterBindings) {
       setters.add(createQueryParameterSetter(parameterBinding, strategies, declaredQuery));
@@ -102,7 +100,6 @@ public class ParameterBinderFactory {
       ParameterBinding binding,
       QueryParameterSetterFactory[] strategies,
       DeclaredQuery declaredQuery) {
-
     for (QueryParameterSetterFactory strategy : strategies) {
       QueryParameterSetter setter = strategy.create(binding, declaredQuery);
 

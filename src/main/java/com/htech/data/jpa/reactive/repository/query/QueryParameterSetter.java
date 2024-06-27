@@ -146,11 +146,9 @@ public interface QueryParameterSetter {
 
     public QueryParameterSetter.QueryMetadata getMetadata(
         String cacheKey, Stage.AbstractQuery query) {
-
       QueryParameterSetter.QueryMetadata queryMetadata = cache.get(cacheKey);
 
       if (queryMetadata == null) {
-
         queryMetadata = new QueryParameterSetter.QueryMetadata(query);
 
         Map<String, QueryParameterSetter.QueryMetadata> cache;
