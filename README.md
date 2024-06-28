@@ -6,8 +6,9 @@
 4. Support @Transactional (readOnly, rollbackFor, timeout, noRollbackFor, ...)
 5. Support @Modifying, @Param
 6. Support spEL
-7. Auto-config
-8. Of course, it is compatible with Webflux
+7. Support NamedQuery
+8. Auto-config
+9. Of course, it is compatible with Webflux
 
 ### Some remaining things:
 1. EntityGraph
