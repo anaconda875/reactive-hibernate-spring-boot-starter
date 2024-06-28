@@ -1,10 +1,12 @@
 package com.htech.data.jpa.reactive.repository.query;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import java.lang.reflect.Method;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.reactive.stage.Stage;
+import org.springframework.data.jpa.provider.PersistenceProvider;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.jpa.repository.query.*;
 import org.springframework.data.projection.ProjectionFactory;
@@ -183,7 +185,7 @@ public class ReactiveJpaQueryLookupStrategy {
             method,
             sessionFactory,
             method.getRequiredAnnotatedQuery(),
-            getCountQuery(method, namedQueries, sessionFactory),
+            getCountQuery(method, namedQueries, entityManagerFactory, sessionFactory),
             queryRewriter,
             evaluationContextProvider);
       }
@@ -194,7 +196,7 @@ public class ReactiveJpaQueryLookupStrategy {
             method,
             sessionFactory,
             namedQueries.getQuery(name),
-            getCountQuery(method, namedQueries, sessionFactory),
+            getCountQuery(method, namedQueries, entityManagerFactory, sessionFactory),
             queryRewriter,
             evaluationContextProvider);
       }
@@ -210,29 +212,32 @@ public class ReactiveJpaQueryLookupStrategy {
     private String getCountQuery(
         ReactiveJpaQueryMethod method,
         NamedQueries namedQueries,
+        EntityManagerFactory emf,
         Stage.SessionFactory sessionFactory) {
       if (StringUtils.hasText(method.getCountQuery())) {
         return method.getCountQuery();
       }
 
-      // TODO
-      //      String queryName = method.getNamedCountQueryName();
-      //
-      //      if (!StringUtils.hasText(queryName)) {
-      //        return method.getCountQuery();
-      //      }
+      String queryName = method.getNamedCountQueryName();
 
-      //      if (namedQueries.hasQuery(queryName)) {
-      //        return namedQueries.getQuery(queryName);
-      //      }
+      if (!StringUtils.hasText(queryName)) {
+        return method.getCountQuery();
+      }
 
-      //      boolean namedQuery =
-      // org.springframework.data.jpa.repository.query.NamedQuery.hasNamedQuery(em, queryName);
-      //
-      //      if (namedQuery) {
-      //        return
-      // method.getQueryExtractor().extractQueryString(em.createNamedQuery(queryName));
-      //      }
+      if (namedQueries.hasQuery(queryName)) {
+        return namedQueries.getQuery(queryName);
+      }
+
+      boolean namedQuery = NamedQuery.hasNamedQuery(emf, queryName);
+
+      if (namedQuery) {
+        try (EntityManager em = emf.createEntityManager()) {
+          return PersistenceProvider.fromEntityManager(em)
+              .extractQueryString(em.createNamedQuery(queryName));
+        } catch (Exception e) {
+          LOG.warn(e.getMessage(), e);
+        }
+      }
 
       return null;
     }

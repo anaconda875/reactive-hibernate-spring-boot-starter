@@ -115,7 +115,7 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
     }
   }
 
-  private static boolean hasNamedQuery(EntityManagerFactory emf, String queryName) {
+  static boolean hasNamedQuery(EntityManagerFactory emf, String queryName) {
     try (EntityManager lookupEm = emf.createEntityManager()) {
       lookupEm.createNamedQuery(queryName);
       return true;
