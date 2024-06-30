@@ -1,7 +1,6 @@
 package com.htech.data.jpa.reactive.repository.support;
 
 import static org.springframework.data.repository.util.ReactiveWrapperConverters.toWrapper;
-import static org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction;
 
 import com.htech.data.jpa.reactive.core.StageReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.DefaultReactiveJpaQueryExtractor;
@@ -96,6 +95,7 @@ public class ReactiveJpaRepositoryFactoryBean<
     //    RepositoryMetadata repositoryMetadata = factory.getRepositoryMetadata(getObjectType());
     //    factory.addRepositoryProxyPostProcessor(new ValueAdapterInterceptorProxyPostProcessor());
     //    factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());
+    factory.addRepositoryProxyPostProcessor(new CrudMethodMetadataPostProcessor());
     factory.addRepositoryProxyPostProcessor(
         new SessionAwarePostProcessor(entityOperations.sessionFactory()));
     factory.addRepositoryProxyPostProcessor(
@@ -262,16 +262,16 @@ public class ReactiveJpaRepositoryFactoryBean<
           }
         })*/ ;
 
-        Mono<Object> filter =
-            forCurrentTransaction()
-                .mapNotNull(
-                    tsm ->
-                        tsm.getResource(
-                            ReactiveJpaRepositoryFactoryBean.this.entityOperations
-                                .sessionFactory()))
-                .filter(ConnectionHolder.class::isInstance)
-                .onErrorResume(e -> Mono.empty())
-                .cache();
+        Mono<Object> filter = Mono.empty();
+        //            forCurrentTransaction()
+        //                .mapNotNull(
+        //                    tsm ->
+        //                        tsm.getResource(
+        //                            ReactiveJpaRepositoryFactoryBean.this.entityOperations
+        //                                .sessionFactory()))
+        //                .filter(ConnectionHolder.class::isInstance)
+        //                .onErrorResume(e -> Mono.empty())
+        //                .cache();
 
         Mono<Boolean> transactionExists =
             filter.map(Objects::nonNull).defaultIfEmpty(Boolean.FALSE);
