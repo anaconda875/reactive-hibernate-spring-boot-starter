@@ -145,9 +145,21 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   private Stage.AbstractQuery applyLockMode(
       Stage.AbstractQuery query, ReactiveJpaQueryMethod method) {
+    LockModeType lockModeType = method.getLockModeType();
+    return doApplyLockMode(query, lockModeType);
+  }
+
+  private static Stage.AbstractQuery doApplyLockMode(
+      Stage.AbstractQuery query, LockModeType lockModeType) {
+    if (lockModeType == null) {
+      return query;
+    }
+
+    if (query instanceof Stage.SelectionQuery<?> sq) {
+      return sq.setLockMode(lockModeType);
+    }
+
     return query;
-    //    LockModeType lockModeType = method.getLockModeType();
-    //    return lockModeType == null ? query : query.setLockMode(lockModeType);
   }
 
   protected ParameterBinder createBinder() {
@@ -156,7 +168,10 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   protected Mono<Stage.AbstractQuery> createQuery(
       Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor parameters) {
-    return doCreateQuery(session, parameters, method);
+    return doCreateQuery(session, parameters, method)
+        .doOnNext(q -> applyHints(q, method))
+        .doOnNext(q -> applyEntityGraphConfiguration(q, method))
+        .doOnNext(q -> applyLockMode(q, method));
     //    return applyLockMode(
     //        applyEntityGraphConfiguration(
     //            applyHints(doCreateQuery(parameters, method), method), method),
@@ -165,7 +180,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   private Stage.AbstractQuery applyEntityGraphConfiguration(
       Stage.AbstractQuery query, ReactiveJpaQueryMethod method) {
-
     return query;
   }
 
