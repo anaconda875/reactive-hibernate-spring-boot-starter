@@ -5,6 +5,7 @@ import static org.springframework.data.jpa.repository.query.QueryUtils.*;
 import com.htech.data.jpa.reactive.core.StageReactiveJpaEntityOperations;
 import com.htech.data.jpa.reactive.repository.query.QueryUtils;
 import com.htech.jpa.reactive.connection.SessionContextHolder;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.criteria.*;
 import java.io.Serial;
 import java.util.*;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.support.CrudMethodMetadata;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.support.PageableUtils;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -59,12 +61,13 @@ public class SimpleReactiveJpaRepository<T, ID>
   @Override
   public <S extends T> Flux<S> findAll() {
     return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
         .flatMap(
-            session ->
+            t ->
                 Mono.defer(
                     () -> {
                       CompletionStage<List<T>> resultList =
-                          getQuery(session, null, Sort.unsorted()).getResultList();
+                          getQuery(t.getT1(), null, Sort.unsorted(), t.getT2()).getResultList();
                       return Mono.fromCompletionStage(resultList);
                     }))
         .flatMapMany(Flux::fromIterable)
@@ -74,13 +77,28 @@ public class SimpleReactiveJpaRepository<T, ID>
   @Override
   public <S extends T> Mono<S> findById(ID id) {
     return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
         .flatMap(
-            session ->
-                Mono.defer(
+            t -> {
+              Stage.Session session = t.getT1();
+              LockModeType lockModeType = t.getT2().getLockModeType();
+              Mono<T> rs;
+              if (lockModeType == null) {
+                rs =
+                    Mono.defer(
                         () ->
                             Mono.fromCompletionStage(
-                                session.find(entityInformation.getJavaType(), id)))
-                    .map(e -> (S) e));
+                                session.find(entityInformation.getJavaType(), id)));
+              } else {
+                rs =
+                    Mono.defer(
+                        () ->
+                            Mono.fromCompletionStage(
+                                session.find(entityInformation.getJavaType(), id, lockModeType)));
+              }
+
+              return rs.map(e -> (S) e);
+            });
   }
 
   @Override
@@ -185,15 +203,16 @@ public class SimpleReactiveJpaRepository<T, ID>
     }
 
     return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
         .flatMap(
-            session ->
+            t ->
                 Mono.defer(
                     () -> {
                       Collection<ID> idCollection = Streamable.of(ids).toList();
                       ByIdsSpecification<T> specification =
                           new ByIdsSpecification<>(entityInformation);
                       Stage.SelectionQuery<T> query =
-                          getQuery(session, specification, Sort.unsorted());
+                          getQuery(t.getT1(), specification, Sort.unsorted(), t.getT2());
 
                       return Mono.fromCompletionStage(
                           query
@@ -282,11 +301,12 @@ public class SimpleReactiveJpaRepository<T, ID>
   @Override
   public Flux<T> findAll(Sort sort) {
     return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
         .flatMap(
-            session ->
+            t ->
                 Mono.defer(
                     () -> {
-                      Stage.SelectionQuery<T> query = getQuery(session, null, sort);
+                      Stage.SelectionQuery<T> query = getQuery(t.getT1(), null, sort, t.getT2());
                       return Mono.fromCompletionStage(query.getResultList());
                     }))
         .flatMapMany(Flux::fromIterable);
@@ -303,15 +323,19 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   public Mono<Page<T>> findAll(
       Mono<Stage.Session> session, Specification<T> spec, Pageable pageable) {
-    return session.flatMap(
-        s ->
-            Mono.defer(
-                () -> {
-                  Stage.SelectionQuery<T> query = getQuery(s, spec, pageable);
-                  return pageable.isUnpaged()
-                      ? Mono.fromCompletionStage(query.getResultList()).map(PageImpl::new)
-                      : readPage(query, entityInformation.getJavaType(), pageable, spec, s);
-                }));
+    return session
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
+        .flatMap(
+            t ->
+                Mono.defer(
+                    () -> {
+                      Stage.SelectionQuery<T> query =
+                          getQuery(t.getT1(), spec, pageable, t.getT2());
+                      return pageable.isUnpaged()
+                          ? Mono.fromCompletionStage(query.getResultList()).map(PageImpl::new)
+                          : readPage(
+                              query, entityInformation.getJavaType(), pageable, spec, t.getT1());
+                    }));
   }
 
   private static Mono<Void> deferRemoving(Stage.Session session, Object e) {
@@ -339,9 +363,12 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   protected Stage.SelectionQuery<T> getQuery(
-      Stage.Session session, @Nullable Specification<T> spec, Pageable pageable) {
+      Stage.Session session,
+      @Nullable Specification<T> spec,
+      Pageable pageable,
+      CrudMethodMetadata metadata) {
     Sort sort = pageable.isPaged() ? pageable.getSort() : Sort.unsorted();
-    return getQuery(session, spec, entityInformation.getJavaType(), sort);
+    return getQuery(session, spec, entityInformation.getJavaType(), sort, metadata);
   }
 
   private String getCountQueryString() {
@@ -369,12 +396,19 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   protected Stage.SelectionQuery<T> getQuery(
-      Stage.Session session, @Nullable Specification<T> spec, Sort sort) {
-    return getQuery(session, spec, entityInformation.getJavaType(), sort);
+      Stage.Session session,
+      @Nullable Specification<T> spec,
+      Sort sort,
+      CrudMethodMetadata metadata) {
+    return getQuery(session, spec, entityInformation.getJavaType(), sort, metadata);
   }
 
   protected <S extends T> Stage.SelectionQuery<S> getQuery(
-      Stage.Session session, Specification<S> spec, Class<S> domainClass, Sort sort) {
+      Stage.Session session,
+      Specification<S> spec,
+      Class<S> domainClass,
+      Sort sort,
+      CrudMethodMetadata metadata) {
     CriteriaBuilder builder = sessionFactory.getCriteriaBuilder();
     CriteriaQuery<S> query = builder.createQuery(domainClass);
 
@@ -385,11 +419,12 @@ public class SimpleReactiveJpaRepository<T, ID>
       query.orderBy(toOrders(sort, root, builder));
     }
 
-    return applyRepositoryMethodMetadata(session.createQuery(query));
+    return applyRepositoryMethodMetadata(session.createQuery(query), metadata);
   }
 
   private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadataForCount(
       Stage.SelectionQuery<S> query) {
+
     // TODO
     //    if (metadata == null) {
     //      return query;
@@ -412,19 +447,14 @@ public class SimpleReactiveJpaRepository<T, ID>
     //    return total;
   }
 
-  private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadata(Stage.SelectionQuery<S> query) {
-    // TODO
-    return query;
-    /*if (metadata == null) {
-      return query;
+  private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadata(
+      Stage.SelectionQuery<S> query, CrudMethodMetadata metadata) {
+    LockModeType lockModeType = metadata.getLockModeType();
+    if (lockModeType != null) {
+      query.setLockMode(lockModeType);
     }
 
-    LockModeType type = metadata.getLockModeType();
-    TypedQuery<S> toReturn = type == null ? query : query.setLockMode(type);
-
-    applyQueryHints(toReturn);
-
-    return toReturn;*/
+    return query;
   }
 
   private <S, U extends T> Root<U> applySpecificationToCriteria(
