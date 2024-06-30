@@ -25,7 +25,6 @@ public abstract class AbstractQueryCreator<T, S> {
   }
 
   private AbstractQueryCreator(PartTree tree, Optional<ParameterAccessor> parameters) {
-
     Assert.notNull(tree, "PartTree must not be null");
     Assert.notNull(parameters, "ParameterAccessor must not be null");
 
@@ -43,20 +42,17 @@ public abstract class AbstractQueryCreator<T, S> {
   }
 
   public T createQuery(Sort dynamicSort) {
-
     Assert.notNull(dynamicSort, "DynamicSort must not be null");
     return complete(createCriteria(tree), tree.getSort().and(dynamicSort));
   }
 
   @Nullable
   private S createCriteria(PartTree tree) {
-
     S base = null;
     Iterator<Object> iterator =
         parameters.map(ParameterAccessor::iterator).orElse(Collections.emptyIterator());
 
     for (PartTree.OrPart node : tree) {
-
       Iterator<Part> parts = node.iterator();
 
       if (!parts.hasNext()) {
@@ -64,7 +60,6 @@ public abstract class AbstractQueryCreator<T, S> {
       }
 
       S criteria = create(parts.next(), iterator);
-
       while (parts.hasNext()) {
         criteria = and(parts.next(), criteria, iterator);
       }
