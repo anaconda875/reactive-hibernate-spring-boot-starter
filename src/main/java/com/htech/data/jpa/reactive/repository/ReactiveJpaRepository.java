@@ -7,4 +7,4 @@ import org.springframework.data.repository.NoRepositoryBean;
  */
 @NoRepositoryBean
 public interface ReactiveJpaRepository<T, ID>
-    extends CrudRepository<T, ID>, ReactivePagingAndSortingRepository<T, ID> {}
+    extends ReactiveCrudRepository<T, ID>, ReactivePagingAndSortingRepository<T, ID> {}

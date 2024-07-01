@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
  * @author Bao.Ngo
  */
 @NoRepositoryBean
-public interface CrudRepository<T, ID> extends Repository<T, ID> {
+public interface ReactiveCrudRepository<T, ID> extends Repository<T, ID> {
   <S extends T> Flux<S> findAll();
 
   //  Uni<T> findById(ID id);

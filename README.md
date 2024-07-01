@@ -35,7 +35,7 @@ Sometimes you might need to add (in case of dependencies conflict):
     <scope>compile</scope>
 </dependency>
 ```
-**2. Useful Crud and Paging/Sorting methods**: see [CrudRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java) and [ReactivePagingAndSortingRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java)  
+**2. Useful Crud and Paging/Sorting methods**: see [ReactiveCrudRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactiveCrudRepository.java) and [ReactivePagingAndSortingRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java)  
 **3. Custom query methods (with `Pageable`, `@Lock`, `@EntityGraph`, `@Param`, `@Transactional`, `@Modifying`):**
 ```java
   @Lock(LockModeType.PESSIMISTIC_READ)
