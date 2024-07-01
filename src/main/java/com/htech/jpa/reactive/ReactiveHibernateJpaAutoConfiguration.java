@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 
+/**
+ * @author Bao.Ngo
+ */
 @Configuration(proxyBeanMethods = false)
 @AutoConfiguration(before = TransactionAutoConfiguration.class)
 @ConditionalOnClass({

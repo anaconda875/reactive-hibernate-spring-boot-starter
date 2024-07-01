@@ -14,6 +14,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class StageReactiveJpaEntityTemplate
     implements StageReactiveJpaEntityOperations, ApplicationContextAware {
 

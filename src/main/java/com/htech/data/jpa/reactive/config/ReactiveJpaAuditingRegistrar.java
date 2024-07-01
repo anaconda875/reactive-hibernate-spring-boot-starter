@@ -13,6 +13,9 @@ import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.jpa.repository.config.JpaMetamodelMappingContextFactoryBean;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 class ReactiveJpaAuditingRegistrar extends AuditingBeanDefinitionRegistrarSupport {
 
   private static final String JPA_MAPPING_CONTEXT_BEAN_NAME = "jpaMappingContext";

@@ -15,6 +15,9 @@ import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
+/**
+ * @author Bao.Ngo
+ */
 public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
   protected final DeclaredQuery query;

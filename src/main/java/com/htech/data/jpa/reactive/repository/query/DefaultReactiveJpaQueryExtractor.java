@@ -6,6 +6,9 @@ import org.hibernate.reactive.stage.Stage;
 import org.hibernate.reactive.stage.impl.StageQueryImpl;
 import org.springframework.data.util.ReflectionUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class DefaultReactiveJpaQueryExtractor implements ReactiveJpaQueryExtractor {
 
   @Override

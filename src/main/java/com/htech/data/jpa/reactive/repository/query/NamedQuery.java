@@ -13,6 +13,9 @@ import org.springframework.data.repository.query.*;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class NamedQuery extends AbstractReactiveJpaQuery {
 
   private static final String CANNOT_EXTRACT_QUERY =

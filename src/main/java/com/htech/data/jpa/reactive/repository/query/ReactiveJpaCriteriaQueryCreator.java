@@ -20,6 +20,9 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaCriteriaQueryCreator
     extends AbstractQueryCreator<CriteriaQuery<? extends Object>, Predicate> {
 

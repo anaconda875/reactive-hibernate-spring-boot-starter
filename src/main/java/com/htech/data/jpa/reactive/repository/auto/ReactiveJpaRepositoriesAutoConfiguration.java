@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportSelector;
 import org.springframework.core.type.AnnotationMetadata;
 
+/**
+ * @author Bao.Ngo
+ */
 @Configuration(proxyBeanMethods = false)
 @AutoConfigureAfter({
   ReactiveHibernateJpaAutoConfiguration.class,

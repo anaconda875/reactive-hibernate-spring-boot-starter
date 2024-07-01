@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.query.JpaQueryMethodFactory;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaQueryMethodFactory implements JpaQueryMethodFactory {
 
   private final ReactiveJpaQueryExtractor extractor;

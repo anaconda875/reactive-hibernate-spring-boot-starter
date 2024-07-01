@@ -3,6 +3,9 @@ package com.htech.data.jpa.reactive.config;
 import java.lang.annotation.*;
 import org.springframework.context.annotation.Import;
 
+/**
+ * @author Bao.Ngo
+ */
 @Inherited
 @Documented
 @Target(ElementType.TYPE)

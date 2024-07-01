@@ -17,6 +17,9 @@ import org.springframework.data.repository.config.RepositoryConfigurationExtensi
 import org.springframework.data.repository.config.RepositoryConfigurationSource;
 import org.springframework.data.repository.core.RepositoryMetadata;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaRepositoryConfigExtension extends RepositoryConfigurationExtensionSupport {
 
   private static final String JPA_METAMODEL_CACHE_CLEANUP_CLASSNAME =

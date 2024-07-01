@@ -14,15 +14,14 @@ import org.springframework.data.util.ReactiveWrappers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaParametersParameterAccessor extends JpaParametersParameterAccessor {
 
   protected final ReactiveJpaQueryMethod method;
   protected final Object[] values;
   protected final Stage.SessionFactory sessionFactory;
-
-  //  protected final Mono<Stage.Session> session;
-  //  protected final Stage.Session session;
-  //  protected final Stage.Transaction transaction;
 
   public ReactiveJpaParametersParameterAccessor(
       ReactiveJpaQueryMethod method,
@@ -36,8 +35,6 @@ public class ReactiveJpaParametersParameterAccessor extends JpaParametersParamet
     this.method = method;
     this.values = values;
     this.sessionFactory = sessionFactory;
-    //    this.session = session;
-    //    this.transaction = transaction;
   }
 
   public Stage.SessionFactory getSessionFactory() {

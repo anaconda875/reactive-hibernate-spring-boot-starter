@@ -5,6 +5,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.query.QueryUtils;
 import org.springframework.lang.Nullable;
 
+/**
+ * @author Bao.Ngo
+ */
 public interface QueryEnhancer {
 
   default String applySorting(Sort sort) {

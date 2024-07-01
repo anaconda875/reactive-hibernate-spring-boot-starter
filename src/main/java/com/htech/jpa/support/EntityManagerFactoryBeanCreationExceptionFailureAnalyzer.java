@@ -8,6 +8,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class EntityManagerFactoryBeanCreationExceptionFailureAnalyzer
     extends AbstractFailureAnalyzer<
         ReactiveHibernateJpaConfiguration.EntityManagerFactoryBeanCreationException>

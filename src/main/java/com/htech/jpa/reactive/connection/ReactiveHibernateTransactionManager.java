@@ -14,6 +14,9 @@ import org.springframework.transaction.reactive.TransactionSynchronizationManage
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveHibernateTransactionManager extends AbstractReactiveTransactionManager
     implements InitializingBean {
 

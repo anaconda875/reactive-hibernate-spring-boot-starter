@@ -3,6 +3,7 @@ package com.htech.data.jpa.reactive.repository.support;
 import static org.springframework.data.jpa.repository.query.QueryUtils.*;
 
 import com.htech.data.jpa.reactive.core.StageReactiveJpaEntityOperations;
+import com.htech.data.jpa.reactive.repository.query.Jpa21Utils;
 import com.htech.data.jpa.reactive.repository.query.QueryUtils;
 import com.htech.jpa.reactive.connection.SessionContextHolder;
 import jakarta.persistence.LockModeType;
@@ -18,16 +19,24 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.query.JpaEntityGraph;
 import org.springframework.data.jpa.repository.support.CrudMethodMetadata;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.MutableQueryHints;
+import org.springframework.data.jpa.repository.support.QueryHints;
 import org.springframework.data.jpa.support.PageableUtils;
 import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.data.util.Optionals;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 @SuppressWarnings("unchecked")
 public class SimpleReactiveJpaRepository<T, ID>
     implements ReactiveJpaRepositoryImplementation<T, ID> {
@@ -83,6 +92,7 @@ public class SimpleReactiveJpaRepository<T, ID>
               Stage.Session session = t.getT1();
               LockModeType lockModeType = t.getT2().getLockModeType();
               Mono<T> rs;
+              // TODO: entity graph??
               if (lockModeType == null) {
                 rs =
                     Mono.defer(
@@ -419,7 +429,7 @@ public class SimpleReactiveJpaRepository<T, ID>
       query.orderBy(toOrders(sort, root, builder));
     }
 
-    return applyRepositoryMethodMetadata(session.createQuery(query), metadata);
+    return applyRepositoryMethodMetadata(session.createQuery(query), session, metadata);
   }
 
   private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadataForCount(
@@ -448,13 +458,30 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadata(
-      Stage.SelectionQuery<S> query, CrudMethodMetadata metadata) {
+      Stage.SelectionQuery<S> query, Stage.Session session, CrudMethodMetadata metadata) {
     LockModeType lockModeType = metadata.getLockModeType();
     if (lockModeType != null) {
       query.setLockMode(lockModeType);
     }
 
+    QueryHints queryHintsForEntityGraphs =
+        Optionals.mapIfAllPresent(
+                Optional.of(session),
+                metadata.getEntityGraph(),
+                (s, graph) ->
+                    Jpa21Utils.getFetchGraphHint(
+                        s, getEntityGraph(graph, metadata), entityInformation.getJavaType()))
+            .orElseGet(MutableQueryHints::new);
+    queryHintsForEntityGraphs.forEach(
+        (k, v) -> query.setPlan((jakarta.persistence.EntityGraph<S>) v));
+
     return query;
+  }
+
+  private JpaEntityGraph getEntityGraph(EntityGraph entityGraph, CrudMethodMetadata metadata) {
+    String fallbackName = entityInformation.getEntityName() + "." + metadata.getMethod().getName();
+
+    return new JpaEntityGraph(entityGraph, fallbackName);
   }
 
   private <S, U extends T> Root<U> applySpecificationToCriteria(

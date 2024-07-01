@@ -29,6 +29,9 @@ import org.springframework.util.ReflectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor {
 
   @Override

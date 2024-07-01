@@ -3,6 +3,9 @@ package com.htech.jpa.reactive.connection;
 import java.time.Duration;
 import org.springframework.lang.Nullable;
 
+/**
+ * @author Bao.Ngo
+ */
 public interface TransactionDefinition {
   Option<IsolationLevel> ISOLATION_LEVEL = Option.valueOf("isolationLevel");
 

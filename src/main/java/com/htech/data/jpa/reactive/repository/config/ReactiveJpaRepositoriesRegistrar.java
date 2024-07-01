@@ -4,6 +4,9 @@ import java.lang.annotation.Annotation;
 import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
+/**
+ * @author Bao.Ngo
+ */
 class ReactiveJpaRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {
 
   @Override

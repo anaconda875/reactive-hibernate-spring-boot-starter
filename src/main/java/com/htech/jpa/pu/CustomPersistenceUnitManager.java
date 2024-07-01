@@ -6,6 +6,9 @@ import java.util.Properties;
 import org.springframework.orm.jpa.persistenceunit.DefaultPersistenceUnitManager;
 import org.springframework.orm.jpa.persistenceunit.MutablePersistenceUnitInfo;
 
+/**
+ * @author Bao.Ngo
+ */
 public class CustomPersistenceUnitManager extends DefaultPersistenceUnitManager {
 
   private final Map<String, Object> vendorProperties;

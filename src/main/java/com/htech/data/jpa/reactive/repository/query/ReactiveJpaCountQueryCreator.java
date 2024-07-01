@@ -6,6 +6,9 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.lang.Nullable;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaCountQueryCreator extends ReactiveJpaCriteriaQueryCreator {
 
   protected final boolean distinct;

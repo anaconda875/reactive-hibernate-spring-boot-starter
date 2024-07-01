@@ -10,6 +10,9 @@ import org.springframework.data.repository.core.support.RepositoryProxyPostProce
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class PersistenceExceptionHandlerPostProcessor implements RepositoryProxyPostProcessor {
 
   private final Stage.SessionFactory sessionFactory;

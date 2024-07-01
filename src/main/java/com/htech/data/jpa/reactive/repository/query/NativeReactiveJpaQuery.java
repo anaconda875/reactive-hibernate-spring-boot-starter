@@ -13,6 +13,9 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery {
 
   public NativeReactiveJpaQuery(

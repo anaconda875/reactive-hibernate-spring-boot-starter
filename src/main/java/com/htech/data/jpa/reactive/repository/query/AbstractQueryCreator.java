@@ -11,6 +11,9 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public abstract class AbstractQueryCreator<T, S> {
 
   protected final Optional<ParameterAccessor> parameters;

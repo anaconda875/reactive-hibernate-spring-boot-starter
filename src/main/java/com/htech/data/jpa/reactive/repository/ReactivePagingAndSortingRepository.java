@@ -8,6 +8,9 @@ import org.springframework.data.repository.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 @NoRepositoryBean
 public interface ReactivePagingAndSortingRepository<T, ID> extends Repository<T, ID> {
 

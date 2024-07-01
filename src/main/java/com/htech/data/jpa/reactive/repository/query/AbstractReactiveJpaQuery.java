@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 import org.hibernate.reactive.stage.Stage;
 import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.jpa.repository.query.JpaEntityGraph;
+import org.springframework.data.jpa.repository.support.QueryHints;
 import org.springframework.data.jpa.util.JpaMetamodel;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
@@ -17,10 +19,11 @@ import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
+/**
+ * @author Bao.Ngo
+ */
 public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
-  //  protected final R2dbcQueryMethod method;
-  //  protected final R2dbcQueryMethod method;
   protected final ReactiveJpaQueryMethod method;
   protected final Stage.SessionFactory sessionFactory;
   protected final JpaMetamodel metamodel;
@@ -132,11 +135,12 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   }
 
   protected <T extends Stage.AbstractQuery> T applyHints(T query, ReactiveJpaQueryMethod method) {
+    // No hints supported yet
     return query;
   }
 
   protected <T extends Stage.AbstractQuery> void applyQueryHint(T query, QueryHint hint) {
-
+    // TODO: no hints supported yet
     //    Assert.notNull(query, "Stage.AbstractQuery must not be null");
     //    Assert.notNull(hint, "QueryHint must not be null");
     //
@@ -168,10 +172,12 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
   protected Mono<Stage.AbstractQuery> createQuery(
       Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor parameters) {
-    return doCreateQuery(session, parameters, method)
-        .doOnNext(q -> applyHints(q, method))
-        .doOnNext(q -> applyEntityGraphConfiguration(q, method))
-        .doOnNext(q -> applyLockMode(q, method));
+    return createQueryKeepSession(session, parameters, method)
+        .map(
+            t ->
+                applyLockMode(
+                    applyEntityGraphConfiguration(applyHints(t.getT2(), method), t.getT1(), method),
+                    method));
     //    return applyLockMode(
     //        applyEntityGraphConfiguration(
     //            applyHints(doCreateQuery(parameters, method), method), method),
@@ -179,7 +185,32 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   }
 
   private Stage.AbstractQuery applyEntityGraphConfiguration(
-      Stage.AbstractQuery query, ReactiveJpaQueryMethod method) {
+      Stage.AbstractQuery query, Stage.Session session, ReactiveJpaQueryMethod method) {
+    JpaEntityGraph entityGraph = method.getEntityGraph();
+
+    if (entityGraph != null) {
+      QueryHints hintsForEntityGraphs =
+          Jpa21Utils.getFetchGraphHint(
+              session,
+              method.getEntityGraph(),
+              getQueryMethod().getEntityInformation().getJavaType());
+      hintsForEntityGraphs.forEach(
+          (k, v) -> doApplyEntityGraphConfiguration(query, (EntityGraph) v));
+    }
+
+    return query;
+  }
+
+  private static Stage.AbstractQuery doApplyEntityGraphConfiguration(
+      Stage.AbstractQuery query, EntityGraph entityGraph) {
+    if (entityGraph == null) {
+      return query;
+    }
+
+    if (query instanceof Stage.SelectionQuery<?> sq) {
+      return sq.setPlan(entityGraph);
+    }
+
     return query;
   }
 
@@ -203,6 +234,13 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     return returnedType.isProjecting() && !getMetamodel().isJpaManaged(returnedType.getReturnedType()) //
         ? Tuple.class //
         : null;*/
+  }
+
+  protected Mono<Tuple2<Stage.Session, Stage.AbstractQuery>> createQueryKeepSession(
+      Mono<Stage.Session> session,
+      ReactiveJpaParametersParameterAccessor accessor,
+      ReactiveJpaQueryMethod method) {
+    return session.zipWhen(s -> doCreateQuery(Mono.just(s), accessor, method));
   }
 
   protected abstract Mono<Stage.AbstractQuery> doCreateQuery(
