@@ -13,6 +13,9 @@ import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public abstract class ReactiveJpaQueryExecution {
 
   private static final ConversionService CONVERSION_SERVICE;

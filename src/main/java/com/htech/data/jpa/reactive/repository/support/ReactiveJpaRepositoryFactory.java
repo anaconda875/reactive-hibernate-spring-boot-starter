@@ -21,6 +21,9 @@ import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySupport
     implements BeanClassLoaderAware {
 

@@ -16,6 +16,9 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaCriteriaDeleteQueryCreator
     extends AbstractQueryCreator<CriteriaDelete<?>, Predicate> {
 

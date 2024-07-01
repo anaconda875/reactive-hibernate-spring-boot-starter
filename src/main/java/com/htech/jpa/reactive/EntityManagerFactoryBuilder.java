@@ -16,6 +16,9 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class EntityManagerFactoryBuilder {
 
   private final JpaVendorAdapter jpaVendorAdapter;

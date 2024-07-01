@@ -8,6 +8,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
 
   protected final DeclaredQuery query;

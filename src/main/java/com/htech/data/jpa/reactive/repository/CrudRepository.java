@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 @NoRepositoryBean
 public interface CrudRepository<T, ID> extends Repository<T, ID> {
   <S extends T> Flux<S> findAll();

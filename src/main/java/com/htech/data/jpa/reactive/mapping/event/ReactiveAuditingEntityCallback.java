@@ -6,6 +6,9 @@ import org.springframework.core.Ordered;
 import org.springframework.data.auditing.ReactiveIsNewAwareAuditingHandler;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveAuditingEntityCallback implements BeforeSaveCallback<Object>, Ordered {
 
   private final ObjectFactory<ReactiveIsNewAwareAuditingHandler> auditingHandlerFactory;

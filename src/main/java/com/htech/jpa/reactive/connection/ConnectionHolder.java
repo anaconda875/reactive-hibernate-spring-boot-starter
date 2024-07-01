@@ -5,6 +5,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ConnectionHolder extends ResourceHolderSupport {
 
   static final String SAVEPOINT_NAME_PREFIX = "SAVEPOINT_";

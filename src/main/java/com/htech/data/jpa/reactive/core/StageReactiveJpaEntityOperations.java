@@ -4,6 +4,9 @@ import org.hibernate.reactive.stage.Stage;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public interface StageReactiveJpaEntityOperations {
 
   <T> Mono<T> persist(T entity);

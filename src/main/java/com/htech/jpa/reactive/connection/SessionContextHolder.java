@@ -4,6 +4,9 @@ import org.hibernate.reactive.stage.Stage;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
+/**
+ * @author Bao.Ngo
+ */
 public class SessionContextHolder {
 
   private static final Object KEY = SessionContextHolder.class;

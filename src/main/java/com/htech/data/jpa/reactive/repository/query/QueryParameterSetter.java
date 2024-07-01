@@ -15,6 +15,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public interface QueryParameterSetter {
 
   Mono<Void> setParameter(

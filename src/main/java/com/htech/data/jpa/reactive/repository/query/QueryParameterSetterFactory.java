@@ -11,6 +11,9 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public abstract class QueryParameterSetterFactory {
 
   @Nullable

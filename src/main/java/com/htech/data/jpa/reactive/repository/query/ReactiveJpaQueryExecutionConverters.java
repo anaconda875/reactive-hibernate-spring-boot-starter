@@ -18,6 +18,9 @@ import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaQueryExecutionConverters {
 
   private static final Set<WrapperType> WRAPPER_TYPES = new HashSet<>();

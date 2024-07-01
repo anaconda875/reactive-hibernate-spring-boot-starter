@@ -6,6 +6,9 @@ import java.lang.annotation.Annotation;
 import org.springframework.boot.autoconfigure.data.AbstractRepositoryConfigurationSourceSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
+/**
+ * @author Bao.Ngo
+ */
 class ReactiveJpaRepositoriesRegistrar1 extends AbstractRepositoryConfigurationSourceSupport {
 
   @Override
