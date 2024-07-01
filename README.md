@@ -18,7 +18,7 @@
 3. Code optimization
 
 ## Getting started:
-**1. Dependency:**
+**1. Dependency and config:**
 ```xml
 <dependency>
     <groupId>io.github.anaconda875</groupId>
@@ -34,6 +34,17 @@ Sometimes you might need to add (in case of dependencies conflict):
     <version>6.4.4.Final</version>
     <scope>compile</scope>
 </dependency>
+```
+Then add these (example) configs:
+```properties
+spring.jpa.properties.jakarta.persistence.jdbc.url=jdbc:postgresql://localhost:5432/blogdb
+spring.jpa.properties.jakarta.persistence.jdbc.user=postgres
+spring.jpa.properties.jakarta.persistence.jdbc.password=postgres
+spring.jpa.properties.hibernate.connection.pool_size=10
+
+spring.jpa.properties.hibernate.enhancer.enableDirtyTracking=false
+spring.jpa.properties.hibernate.enhancer.enableLazyInitialization=false
+spring.jpa.properties.hibernate.enhancer.enableAssociationManagement=false
 ```
 **2. Useful Crud and Paging/Sorting methods**: see [ReactiveCrudRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactiveCrudRepository.java) and [ReactivePagingAndSortingRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java)  
 **3. Custom query methods (with `Pageable`, `@Lock`, `@EntityGraph`, `@Param`, `@Transactional`, `@Modifying`):**
