@@ -13,12 +13,12 @@
 11. Of course, it is truly non-blocking and compatible with Webflux
 
 ### Some remaining things:
-1. Isolation level, savepoint
+1. Isolation level ([#1098](https://github.com/hibernate/hibernate-reactive/issues/1098)), savepoint
 2. Stored procedure
 3. Code optimization
 
 ## Getting started:
-1. Dependency:
+**1. Dependency:**
 ```xml
 <dependency>
     <groupId>io.github.anaconda875</groupId>
@@ -35,8 +35,8 @@ Sometimes you might need to add (in case of dependencies conflict):
     <scope>compile</scope>
 </dependency>
 ```
-2. Useful Crud and Paging/Sorting methods: see [CrudRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java) and [CrudRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java)
-3. Custom query methods (with `Pageable`, `@Lock`, `@EntityGraph`, `@Param`, `@Transactional`, `@Modifying`):
+**2. Useful Crud and Paging/Sorting methods**: see [CrudRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java) and [ReactivePagingAndSortingRepository](src/main/java/com/htech/data/jpa/reactive/repository/ReactivePagingAndSortingRepository.java)  
+**3. Custom query methods (with `Pageable`, `@Lock`, `@EntityGraph`, `@Param`, `@Transactional`, `@Modifying`):**
 ```java
   @Lock(LockModeType.PESSIMISTIC_READ)
   @EntityGraph(attributePaths = {"content"})
@@ -73,7 +73,7 @@ Sometimes you might need to add (in case of dependencies conflict):
   @Query("DELETE FROM Post p WHERE p.title = :title")
   Mono<?> deleteCustom(@Param("title") String title);
 ```
-4. Support `@NamedQuery`, `@NamedEntityGraph`, Auditing:
+**4. Support `@NamedQuery`, `@NamedEntityGraph`, Auditing:**
 ```java
 @NamedQueries(
     value = {
@@ -190,7 +190,7 @@ public class Config {
 }
 
 ```
-5. SpEL:
+**5. SpEL:**
 ```java
   @Query(
       nativeQuery = true,
@@ -207,7 +207,7 @@ public class Config {
   Mono<Post> testSpel3(String title);
 ```
 
-6. TO BE CONTINUED...
+**6. TO BE CONTINUED...**
 
 This is an example of how to use it (with Postgres): https://github.com/anaconda875/spring-hibernate-reactive-mutiny-example
 
