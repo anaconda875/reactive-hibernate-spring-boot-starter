@@ -44,7 +44,6 @@ public class ParameterBinder {
 
     return bind(metadata.withQuery(jpaQuery), accessor, QueryParameterSetter.ErrorHandling.STRICT)
         .thenReturn(jpaQuery);
-    //    return jpaQuery;
   }
 
   public Mono<Void> bind(

@@ -82,13 +82,6 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
   @Override
   public String detectAlias() {
     return invokeQueryParser("findAlias", null);
-    //    try {
-    //      Method method = ReflectionUtils.findMethod(queryParser.getClass(), "findAlias");
-    //      ReflectionUtils.makeAccessible(method);
-    //      return (String) method.invoke(queryParser);
-    //    } catch (Exception e) {
-    //      throw new RuntimeException(e.getMessage(), e);
-    //    }
   }
 
   @Override

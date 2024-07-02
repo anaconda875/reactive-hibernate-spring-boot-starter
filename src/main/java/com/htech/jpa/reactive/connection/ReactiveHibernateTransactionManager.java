@@ -387,10 +387,6 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
 
   private static class ConnectionFactoryTransactionObject {
 
-    //    private static final Scheduler SCHEDULER = Schedulers.fromExecutor(command ->
-    // Vertx.vertx().runOnContext(v -> command.run()));
-    //    private static final Scheduler SCHEDULER = Schedulers.boundedElastic();
-
     @Nullable private ConnectionHolder connectionHolder;
 
     private boolean newConnectionHolder;
@@ -459,7 +455,6 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
               () -> Mono.just(getConnectionHolder().getConnection().getReactiveConnection()))
           .map(ReactiveConnection::commitTransaction)
           .flatMap(Mono::fromCompletionStage)
-      //              .subscribeOn(SCHEDULER)
       /*)*/ ;
     }
 

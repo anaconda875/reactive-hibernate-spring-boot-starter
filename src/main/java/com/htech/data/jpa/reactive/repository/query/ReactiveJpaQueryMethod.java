@@ -317,11 +317,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     return this.isCollectionQuery.get();
   }
 
-  //  @Override
-  //  public boolean isStreamQuery() {
-  //    return true;
-  //  }
-
   public boolean isProcedureQuery() {
     return this.isProcedureQuery.get();
   }

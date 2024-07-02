@@ -66,8 +66,6 @@ public class EntityManagerFactoryBuilder {
 
   public class Builder {
 
-    //    private DataSource dataSource;
-
     private PersistenceManagedTypes managedTypes;
 
     private String[] packagesToScan;
@@ -77,8 +75,6 @@ public class EntityManagerFactoryBuilder {
     private Map<String, Object> properties = new HashMap<>();
 
     private String[] mappingResources;
-
-    //    private boolean jta;
 
     protected Builder() {}
 
@@ -116,11 +112,6 @@ public class EntityManagerFactoryBuilder {
       return this;
     }
 
-    //    public Builder jta(boolean jta) {
-    //      this.jta = jta;
-    //      return this;
-    //    }
-
     public LocalContainerEntityManagerFactoryBean build() {
       LocalContainerEntityManagerFactoryBean entityManagerFactoryBean =
           new LocalContainerEntityManagerFactoryBean();
@@ -132,12 +123,6 @@ public class EntityManagerFactoryBuilder {
       }
       entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
-      //      if (this.jta) {
-      //        entityManagerFactoryBean.setJtaDataSource(this.dataSource);
-      //      }
-      //      else {
-      //        entityManagerFactoryBean.setDataSource(this.dataSource);
-      //      }
       if (this.managedTypes != null) {
         entityManagerFactoryBean.setManagedTypes(this.managedTypes);
       } else {

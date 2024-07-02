@@ -27,7 +27,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   protected final ReactiveJpaQueryMethod method;
   protected final Stage.SessionFactory sessionFactory;
   protected final JpaMetamodel metamodel;
-  //  private final PersistenceProvider provider;
   protected final Lazy<ReactiveJpaQueryExecution> execution;
 
   final Lazy<ParameterBinder> parameterBinder = Lazy.of(this::createBinder);
@@ -41,7 +40,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     this.method = method;
     this.sessionFactory = sessionFactory;
     this.metamodel = JpaMetamodel.of(sessionFactory.getMetamodel());
-    //    this.provider = PersistenceProvider.fromMetamodel().fr(em);
     this.execution =
         Lazy.of(
             () -> {

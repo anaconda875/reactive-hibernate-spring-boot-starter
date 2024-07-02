@@ -80,19 +80,6 @@ public class StageReactiveJpaEntityTemplate
                                     Mono.fromCompletionStage(session.persist(e))
                                         .then(deferFlushing(session))
                                         .thenReturn(e))));
-
-    //    Mono<T> tMono = test.flatMap(v -> {
-    //      return this.<T>maybeCallBeforeSave(entity);
-    //    });
-    //    return tMono.as(e -> {
-    //      return toWrapper(e, Uni.class).chain(t -> session
-    //          .persist(t)
-    //          .chain(session::flush)
-    //          .replaceWith(t)
-    //          .emitOn(EXECUTOR)
-    //          .runSubscriptionOn(EXECUTOR));
-    //    })
-    //    ;
   }
 
   private <T> Mono<T> maybeCallBeforeSave(T entity) {

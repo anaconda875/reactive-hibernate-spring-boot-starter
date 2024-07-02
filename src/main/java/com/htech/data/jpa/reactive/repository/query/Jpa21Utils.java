@@ -32,9 +32,7 @@ public class Jpa21Utils {
     }
   }
 
-  private Jpa21Utils() {
-    // prevent instantiation
-  }
+  private Jpa21Utils() {}
 
   public static QueryHints getFetchGraphHint(
       Stage.Session em, @Nullable JpaEntityGraph entityGraph, Class<?> entityType) {

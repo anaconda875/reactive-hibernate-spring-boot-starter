@@ -95,15 +95,6 @@ public class ReactiveHibernateJpaConfiguration {
     return customizers;
   }
 
-  //  @Bean
-  //  @ConditionalOnMissingBean
-  //  public PlatformTransactionManager transactionManager(
-  //      ObjectProvider<TransactionManagerCustomizers> transactionManagerCustomizers) {
-  //    JpaTransactionManager transactionManager = new JpaTransactionManager();
-  //    transactionManagerCustomizers.ifAvailable((customizers) ->
-  // customizers.customize(transactionManager));
-  //    return transactionManager;
-  //  }
   @Bean
   @ConditionalOnMissingBean
   public JpaVendorAdapter jpaVendorAdapter() {
