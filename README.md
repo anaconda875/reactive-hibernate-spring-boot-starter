@@ -86,6 +86,8 @@ spring.jpa.properties.hibernate.enhancer.enableAssociationManagement=false
 ```
 **4. Support `@NamedQuery`, `@NamedEntityGraph`, Auditing:**
 ```java
+@Data
+@Entity
 @NamedQueries(
     value = {
       @NamedQuery(
