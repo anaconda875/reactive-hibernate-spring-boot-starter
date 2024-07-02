@@ -35,11 +35,20 @@ Sometimes you might need to add (in case of dependencies conflict):
     <scope>compile</scope>
 </dependency>
 ```
+Add a suitable driver (for example, MySQL):
+```xml
+<dependency>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-mysql-client</artifactId>
+    <version>${your.version}</version>
+</dependency>
+```
 Then add these (example) configs:
 ```properties
-spring.jpa.properties.jakarta.persistence.jdbc.url=jdbc:postgresql://localhost:5432/blogdb
-spring.jpa.properties.jakarta.persistence.jdbc.user=postgres
-spring.jpa.properties.jakarta.persistence.jdbc.password=postgres
+spring.jpa.properties.jakarta.persistence.jdbc.url=jdbc:mysql://localhost:3306/blogdb
+spring.jpa.properties.jakarta.persistence.jdbc.user=mysql
+spring.jpa.properties.jakarta.persistence.jdbc.password=mysql
+
 spring.jpa.properties.hibernate.connection.pool_size=10
 
 spring.jpa.properties.hibernate.enhancer.enableDirtyTracking=false
