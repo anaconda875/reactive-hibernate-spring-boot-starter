@@ -27,7 +27,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   protected final ReactiveJpaQueryMethod method;
   protected final Stage.SessionFactory sessionFactory;
   protected final JpaMetamodel metamodel;
-  //  private final PersistenceProvider provider;
   protected final Lazy<ReactiveJpaQueryExecution> execution;
 
   final Lazy<ParameterBinder> parameterBinder = Lazy.of(this::createBinder);
@@ -45,7 +44,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     this.execution =
         Lazy.of(
             () -> {
-
               /*if (method.isStreamQuery()) {
                 return new ReactiveJpaQueryExecution.StreamExecution();
               } else*/
@@ -109,11 +107,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    if (method.isNativeQuery() && PersistenceProvider.HIBERNATE.equals(provider)) {
     //      return new HibernateJpaParametersParameterAccessor(method.getParameters(), parameters,
     // em);
-    //    }
-
-    //    Stage.Session session = (Stage.Session) parameters[parameters.length - 2];
-    //    Stage.Transaction transaction = (Stage.Transaction) parameters[parameters.length - 1];
-    //    Object[] originalParams = Arrays.copyOfRange(parameters, 0, parameters.length - 2);
 
     return new ReactiveJpaParametersParameterAccessor(
             method, method.getParameters(), parameters, sessionFactory)
@@ -256,23 +249,18 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     private final ReturnedType type;
 
     public TupleConverter(ReturnedType type) {
-
       Assert.notNull(type, "Returned type must not be null");
-
       this.type = type;
     }
 
     @Override
     public Object convert(Object source) {
-
       if (!(source instanceof Tuple tuple)) {
         return source;
       }
 
       List<TupleElement<?>> elements = tuple.getElements();
-
       if (elements.size() == 1) {
-
         Object value = tuple.get(elements.get(0));
 
         if (type.getDomainType().isInstance(value) || type.isInstance(value) || value == null) {
@@ -305,7 +293,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
       @Override
       public boolean containsKey(Object key) {
-
         try {
           tuple.get((String) key);
           return true;
@@ -322,7 +309,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
       @Override
       @Nullable
       public Object get(Object key) {
-
         if (!(key instanceof String)) {
           return null;
         }
@@ -356,7 +342,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
       @Override
       public Set<String> keySet() {
-
         return tuple.getElements().stream() //
             .map(TupleElement::getAlias) //
             .collect(Collectors.toSet());
@@ -369,7 +354,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
 
       @Override
       public Set<Entry<String, Object>> entrySet() {
-
         return tuple.getElements().stream() //
             .map(e -> new HashMap.SimpleEntry<String, Object>(e.getAlias(), tuple.get(e))) //
             .collect(Collectors.toSet());

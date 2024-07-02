@@ -327,7 +327,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   }
 
   StoredProcedureAttributes getProcedureAttributes() {
-
     if (storedProcedureAttributes == null) {
       this.storedProcedureAttributes =
           STORED_PROCEDURE_ATTRIBUTE_SOURCE.createFrom(method, getEntityInformation());

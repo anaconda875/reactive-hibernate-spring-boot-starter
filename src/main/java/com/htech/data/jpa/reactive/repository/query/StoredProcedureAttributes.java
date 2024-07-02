@@ -7,6 +7,9 @@ import java.util.stream.IntStream;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class StoredProcedureAttributes {
 
   static final String SYNTHETIC_OUTPUT_PARAMETER_NAME = "out";
@@ -23,7 +26,6 @@ public class StoredProcedureAttributes {
       String procedureName,
       List<ProcedureParameter> outputProcedureParameters,
       boolean namedStoredProcedure) {
-
     Assert.notNull(procedureName, "ProcedureName must not be null");
     Assert.notNull(outputProcedureParameters, "OutputProcedureParameters must not be null");
     Assert.isTrue(
@@ -42,14 +44,12 @@ public class StoredProcedureAttributes {
 
   private List<ProcedureParameter> getParametersWithCompletedNames(
       List<ProcedureParameter> procedureParameters) {
-
     return IntStream.range(0, procedureParameters.size()) //
         .mapToObj(i -> getParameterWithCompletedName(procedureParameters.get(i), i)) //
         .collect(Collectors.toList());
   }
 
   private ProcedureParameter getParameterWithCompletedName(ProcedureParameter parameter, int i) {
-
     return new ProcedureParameter(
         completeOutputParameterName(i, parameter.getName()),
         parameter.getMode(),
@@ -57,7 +57,6 @@ public class StoredProcedureAttributes {
   }
 
   private String completeOutputParameterName(int i, String paramName) {
-
     return StringUtils.hasText(paramName) //
         ? paramName //
         : createSyntheticParameterName(i);
@@ -80,7 +79,6 @@ public class StoredProcedureAttributes {
   }
 
   public boolean hasReturnValue() {
-
     if (getOutputProcedureParameters().isEmpty()) return false;
 
     Class<?> outputType = getOutputProcedureParameters().get(0).getType();

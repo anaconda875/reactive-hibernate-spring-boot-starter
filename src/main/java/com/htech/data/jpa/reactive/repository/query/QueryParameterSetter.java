@@ -195,7 +195,6 @@ public interface QueryParameterSetter {
     }
 
     QueryMetadata(QueryParameterSetter.QueryMetadata metadata) {
-
       //      this.namedParameters = metadata.namedParameters;
       //      this.parameters = metadata.parameters;
       //      this.registerExcessParameters = metadata.registerExcessParameters;

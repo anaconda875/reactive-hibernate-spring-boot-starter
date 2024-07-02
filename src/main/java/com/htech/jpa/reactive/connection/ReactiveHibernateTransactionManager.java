@@ -200,7 +200,6 @@ public class ReactiveHibernateTransactionManager extends AbstractReactiveTransac
       TransactionSynchronizationManager synchronizationManager,
       @Nullable Object transaction,
       Object suspendedResources) {
-
     return Mono.defer(
         () -> {
           synchronizationManager.bindResource(obtainSessionFactory(), suspendedResources);

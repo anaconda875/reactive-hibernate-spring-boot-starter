@@ -18,11 +18,13 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public enum StoredProcedureAttributeSource {
   INSTANCE;
 
   public StoredProcedureAttributes createFrom(Method method, JpaEntityMetadata<?> entityMetadata) {
-
     Assert.notNull(method, "Method must not be null");
     Assert.notNull(entityMetadata, "EntityMetadata must not be null");
 
@@ -47,7 +49,6 @@ public enum StoredProcedureAttributeSource {
   }
 
   private String deriveProcedureNameFrom(Method method, Procedure procedure) {
-
     if (StringUtils.hasText(procedure.value())) {
       return procedure.value();
     }
@@ -58,16 +59,13 @@ public enum StoredProcedureAttributeSource {
 
   private StoredProcedureAttributes newProcedureAttributesFrom(
       Method method, NamedStoredProcedureQuery namedStoredProc, Procedure procedure) {
-
     List<ProcedureParameter> outputParameters;
-
     if (!procedure.outputParameterName().isEmpty()) {
 
       // we give the output parameter definition from the @Procedure annotation precedence
       outputParameters =
           Collections.singletonList(createOutputProcedureParameterFrom(method, procedure));
     } else {
-
       // try to discover the output parameter
       outputParameters =
           extractOutputParametersFrom(namedStoredProc).stream() //
@@ -83,7 +81,6 @@ public enum StoredProcedureAttributeSource {
 
   private ProcedureParameter createOutputProcedureParameterFrom(
       Method method, Procedure procedure) {
-
     return new ProcedureParameter(
         procedure.outputParameterName(),
         procedure.refCursor() ? ParameterMode.REF_CURSOR : ParameterMode.OUT,
@@ -92,11 +89,8 @@ public enum StoredProcedureAttributeSource {
 
   private List<StoredProcedureParameter> extractOutputParametersFrom(
       NamedStoredProcedureQuery namedStoredProc) {
-
     List<StoredProcedureParameter> outputParameters = new ArrayList<>();
-
     for (StoredProcedureParameter param : namedStoredProc.parameters()) {
-
       switch (param.mode()) {
         case OUT:
         case INOUT:
@@ -115,23 +109,18 @@ public enum StoredProcedureAttributeSource {
   @Nullable
   private NamedStoredProcedureQuery tryFindAnnotatedNamedStoredProcedureQuery(
       Method method, JpaEntityMetadata<?> entityMetadata, Procedure procedure) {
-
     Assert.notNull(method, "Method must not be null");
     Assert.notNull(entityMetadata, "EntityMetadata must not be null");
     Assert.notNull(procedure, "Procedure must not be null");
 
     Class<?> entityType = entityMetadata.getJavaType();
-
     List<NamedStoredProcedureQuery> queries = collectNamedStoredProcedureQueriesFrom(entityType);
-
     if (queries.isEmpty()) {
       return null;
     }
 
     String namedProcedureName = derivedNamedProcedureNameFrom(method, entityMetadata, procedure);
-
     for (NamedStoredProcedureQuery query : queries) {
-
       if (query.name().equals(namedProcedureName)) {
         return query;
       }
@@ -142,7 +131,6 @@ public enum StoredProcedureAttributeSource {
 
   private String derivedNamedProcedureNameFrom(
       Method method, JpaEntityMetadata<?> entityMetadata, Procedure procedure) {
-
     return StringUtils.hasText(procedure.name()) //
         ? procedure.name() //
         : entityMetadata.getEntityName() + "." + method.getName();
@@ -150,9 +138,7 @@ public enum StoredProcedureAttributeSource {
 
   private List<NamedStoredProcedureQuery> collectNamedStoredProcedureQueriesFrom(
       Class<?> entityType) {
-
     List<NamedStoredProcedureQuery> queries = new ArrayList<>();
-
     NamedStoredProcedureQueries namedQueriesAnnotation =
         AnnotatedElementUtils.findMergedAnnotation(entityType, NamedStoredProcedureQueries.class);
     if (namedQueriesAnnotation != null) {
