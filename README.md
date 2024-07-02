@@ -2,7 +2,7 @@
 ### Some features:
 1. Useful Crud and Paging/Sorting methods (just like spring-data-jpa)
 2. Custom query methods (findBy\*And\*OrderBy*, @Query("FROM Abc")), native queries are also supported
-3. Support `@Transactional` (readOnly, rollbackFor, timeout, noRollbackFor, ...)
+3. Support `@Transactional` (**propagation, readOnly, rollbackFor, timeout, noRollbackFor, ...**)
 4. Support `@Modifying`, `@Param`
 5. Support `@Lock`, `@EntityGraph`
 6. Support `@NamedQuery`, `@NamedEntityGraph`
