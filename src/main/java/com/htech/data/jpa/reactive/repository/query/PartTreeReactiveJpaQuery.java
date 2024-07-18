@@ -169,7 +169,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
         new QueryParameterSetter.QueryMetadataCache();
 
     QueryPreparer(boolean recreateQueries) {
-
       AbstractQueryCreator<C, Predicate> creator = createCreator(null);
 
       if (recreateQueries) {

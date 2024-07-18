@@ -58,7 +58,6 @@ public class ParameterMetadataProvider {
 
   @SuppressWarnings("unchecked")
   public <T> ParameterMetadataProvider.ParameterMetadata<T> next(Part part) {
-
     Assert.isTrue(
         parameters.hasNext(), () -> String.format("No parameter available for part %s", part));
 
@@ -70,7 +69,6 @@ public class ParameterMetadataProvider {
   @SuppressWarnings("unchecked")
   public <T> ParameterMetadataProvider.ParameterMetadata<? extends T> next(
       Part part, Class<T> type) {
-
     Parameter parameter = parameters.next();
     Class<?> typeToUse =
         ClassUtils.isAssignable(type, parameter.getType()) ? parameter.getType() : type;
@@ -80,9 +78,7 @@ public class ParameterMetadataProvider {
 
   private <T> ParameterMetadataProvider.ParameterMetadata<T> next(
       Part part, Class<T> type, Parameter parameter) {
-
     Assert.notNull(type, "Type must not be null");
-
     /*
      * We treat Expression types as Object vales since the real value to be bound as a parameter is determined at query time.
      */
@@ -152,13 +148,11 @@ public class ParameterMetadataProvider {
 
     @Nullable
     public Object prepare(@Nullable Object value) {
-
       if (value == null || expression.getJavaType() == null) {
         return value;
       }
 
       if (String.class.equals(expression.getJavaType()) && !noWildcards) {
-
         switch (type) {
           case STARTING_WITH:
             return String.format("%s%%", escape.escape(value.toString()));
@@ -179,7 +173,6 @@ public class ParameterMetadataProvider {
 
     @Nullable
     private static Collection<?> toCollection(@Nullable Object value) {
-
       if (value == null) {
         return null;
       }
@@ -189,7 +182,6 @@ public class ParameterMetadataProvider {
       }
 
       if (ObjectUtils.isArray(value)) {
-
         List<Object> collection = Arrays.asList(ObjectUtils.toObjectArray(value));
         return collection.isEmpty() ? null : collection;
       }
@@ -201,7 +193,6 @@ public class ParameterMetadataProvider {
     @SuppressWarnings("unchecked")
     private static Collection<?> upperIfIgnoreCase(
         boolean ignoreCase, @Nullable Collection<?> collection) {
-
       if (!ignoreCase || CollectionUtils.isEmpty(collection)) {
         return collection;
       }

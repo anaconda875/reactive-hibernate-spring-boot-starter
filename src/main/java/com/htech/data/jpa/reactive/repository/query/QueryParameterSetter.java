@@ -54,7 +54,6 @@ public interface QueryParameterSetter {
     @Override
     public Mono<Void> setParameter(
         BindableQuery query, JpaParametersParameterAccessor accessor, ErrorHandling errorHandling) {
-
       if (temporalType != null) {
         return Mono.empty();
         // TODO

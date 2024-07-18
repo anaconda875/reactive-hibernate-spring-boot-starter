@@ -237,7 +237,6 @@ public abstract class QueryParameterSetterFactory {
 
     @Override
     public QueryParameterSetter create(ParameterBinding binding, DeclaredQuery declaredQuery) {
-
       int parameterIndex = binding.getRequiredPosition() - 1;
 
       Assert.isTrue( //

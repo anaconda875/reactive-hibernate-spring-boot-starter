@@ -11,7 +11,7 @@
     </parent>
     <groupId>io.github.anaconda875</groupId>
     <artifactId>reactive-hibernate-spring-boot-starter</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <description>Integrate Reactive Hibernate to Spring Data with Auto-config</description>
 
     <licenses>
