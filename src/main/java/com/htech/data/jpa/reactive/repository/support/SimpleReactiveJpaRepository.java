@@ -331,7 +331,24 @@ public class SimpleReactiveJpaRepository<T, ID>
     return findAll(SessionContextHolder.currentSession(), null, pageable);
   }
 
-  public Mono<Page<T>> findAll(
+  @Override
+  public Flux<T> findAll(Specification<T> spec) {
+    return findAll(SessionContextHolder.currentSession(), spec, Pageable.unpaged())
+        .flatMapMany(page -> Flux.fromIterable(page.getContent()));
+  }
+
+  @Override
+  public Mono<List<T>> findAllToList(Specification<T> spec) {
+    return findAll(SessionContextHolder.currentSession(), spec, Pageable.unpaged())
+        .map(Page::getContent);
+  }
+
+  @Override
+  public Mono<Page<T>> findAll(Specification<T> spec, Pageable pageable) {
+    return findAll(SessionContextHolder.currentSession(), spec, pageable);
+  }
+
+  protected Mono<Page<T>> findAll(
       Mono<Stage.Session> session, Specification<T> spec, Pageable pageable) {
     return session
         .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())

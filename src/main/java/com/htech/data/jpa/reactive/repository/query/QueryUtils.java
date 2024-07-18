@@ -175,8 +175,7 @@ public class QueryUtils {
   }
 
   public static String applySorting(String query, Sort sort, @Nullable String alias) {
-
-    Assert.hasText(query, "Query must not be null or empty");
+    Assert.notNull(query, "Query must not be null");
 
     if (sort.isUnsorted()) {
       return query;
@@ -209,7 +208,6 @@ public class QueryUtils {
   }
 
   private static int countOccurrences(Pattern pattern, String string) {
-
     Matcher matcher = pattern.matcher(string);
 
     int occurrences = 0;
@@ -224,13 +222,10 @@ public class QueryUtils {
       Set<String> selectionAlias,
       @Nullable String alias,
       Sort.Order order) {
-
     String property = order.getProperty();
-
     checkSortExpression(order);
 
     if (selectionAlias.contains(property)) {
-
       return String.format(
           "%s %s", //
           order.isIgnoreCase() ? String.format("lower(%s)", property) : property, //
@@ -238,9 +233,7 @@ public class QueryUtils {
     }
 
     boolean qualifyReference = !property.contains("("); // ( indicates a function
-
     for (String joinAlias : joinAliases) {
-
       if (property.startsWith(joinAlias.concat("."))) {
 
         qualifyReference = false;
@@ -258,12 +251,10 @@ public class QueryUtils {
   }
 
   static Set<String> getOuterJoinAliases(String query) {
-
     Set<String> result = new HashSet<>();
     Matcher matcher = JOIN_PATTERN.matcher(query);
 
     while (matcher.find()) {
-
       String alias = matcher.group(QUERY_JOIN_ALIAS_GROUP_INDEX);
       if (StringUtils.hasText(alias)) {
         result.add(alias);
@@ -274,7 +265,6 @@ public class QueryUtils {
   }
 
   private static Set<String> getFieldAliases(String query) {
-
     Set<String> result = new HashSet<>();
     Matcher matcher = FIELD_ALIAS_PATTERN.matcher(query);
 
@@ -289,12 +279,10 @@ public class QueryUtils {
   }
 
   static Set<String> getFunctionAliases(String query) {
-
     Set<String> result = new HashSet<>();
     Matcher matcher = FUNCTION_PATTERN.matcher(query);
 
     while (matcher.find()) {
-
       String alias = matcher.group(1);
 
       if (StringUtils.hasText(alias)) {
@@ -312,7 +300,6 @@ public class QueryUtils {
   @Nullable
   @Deprecated
   public static String detectAlias(String query) {
-
     String alias = null;
     Matcher matcher = ALIAS_MATCH.matcher(removeSubqueries(query));
     while (matcher.find()) {
@@ -322,7 +309,6 @@ public class QueryUtils {
   }
 
   static String removeSubqueries(String query) {
-
     if (!StringUtils.hasText(query)) {
       return query;
     }
@@ -332,7 +318,6 @@ public class QueryUtils {
     List<Boolean> closeMatches = new ArrayList<>();
 
     for (int i = 0; i < query.length(); i++) {
-
       char c = query.charAt(i);
       if (c == '(') {
         opens.add(i);
@@ -345,12 +330,10 @@ public class QueryUtils {
     StringBuilder sb = new StringBuilder(query);
     boolean startsWithParen = STARTS_WITH_PAREN.matcher(query).find();
     for (int i = opens.size() - 1; i >= (startsWithParen ? 1 : 0); i--) {
-
       Integer open = opens.get(i);
       Integer close = findClose(open, closes, closeMatches) + 1;
 
       if (close > open) {
-
         String subquery = sb.substring(open, close);
         Matcher matcher = PARENS_TO_REMOVE.matcher(subquery);
         if (matcher.find()) {
@@ -364,9 +347,7 @@ public class QueryUtils {
 
   private static Integer findClose(
       final Integer open, final List<Integer> closes, final List<Boolean> closeMatches) {
-
     for (int i = 0; i < closes.size(); i++) {
-
       int close = closes.get(i);
       if (close > open && !closeMatches.get(i)) {
         closeMatches.set(i, Boolean.TRUE);
@@ -379,7 +360,6 @@ public class QueryUtils {
 
   public static <T> Query applyAndBind(
       String queryString, Iterable<T> entities, EntityManager entityManager) {
-
     Assert.notNull(queryString, "Querystring must not be null");
     Assert.notNull(entities, "Iterable of entities must not be null");
     Assert.notNull(entityManager, "EntityManager must not be null");
@@ -395,9 +375,7 @@ public class QueryUtils {
     builder.append(" where");
 
     int i = 0;
-
     while (iterator.hasNext()) {
-
       iterator.next();
 
       builder.append(String.format(" %s = ?%d", alias, ++i));
@@ -408,7 +386,6 @@ public class QueryUtils {
     }
 
     Query query = entityManager.createQuery(builder.toString());
-
     iterator = entities.iterator();
     i = 0;
 
@@ -431,14 +408,12 @@ public class QueryUtils {
 
   static String createCountQueryFor(
       String originalQuery, @Nullable String countProjection, boolean nativeQuery) {
-
     Assert.hasText(originalQuery, "OriginalQuery must not be null or empty");
 
     Matcher matcher = COUNT_MATCH.matcher(originalQuery);
     String countQuery;
 
     if (countProjection == null) {
-
       String variable = matcher.matches() ? matcher.group(VARIABLE_NAME_GROUP_INDEX) : null;
       boolean useVariable =
           StringUtils.hasText(variable) //
@@ -453,11 +428,9 @@ public class QueryUtils {
               : COMPLEX_COUNT_LAST_VALUE;
 
       String replacement = useVariable ? SIMPLE_COUNT_VALUE : complexCountValue;
-
       if (variable != null && (nativeQuery && (variable.contains(",") || "*".equals(variable)))) {
         replacement = "1";
       } else {
-
         String alias =
             org.springframework.data.jpa.repository.query.QueryUtils.detectAlias(originalQuery);
         if (("*".equals(variable) && alias != null)) {
@@ -474,11 +447,8 @@ public class QueryUtils {
   }
 
   public static boolean hasNamedParameter(Query query) {
-
     Assert.notNull(query, "Query must not be null");
-
     for (Parameter<?> parameter : query.getParameters()) {
-
       String name = parameter.getName();
 
       // Hibernate 3 specific hack as it returns the index as String for the name.
@@ -497,7 +467,6 @@ public class QueryUtils {
 
   public static List<jakarta.persistence.criteria.Order> toOrders(
       Sort sort, From<?, ?> from, CriteriaBuilder cb) {
-
     if (sort.isUnsorted()) {
       return Collections.emptyList();
     }
@@ -506,7 +475,6 @@ public class QueryUtils {
     Assert.notNull(cb, "CriteriaBuilder must not be null");
 
     List<jakarta.persistence.criteria.Order> orders = new ArrayList<>();
-
     for (org.springframework.data.domain.Sort.Order order : sort) {
       orders.add(toJpaOrder(order, from, cb));
     }
@@ -515,14 +483,12 @@ public class QueryUtils {
   }
 
   public static boolean hasConstructorExpression(String query) {
-
     Assert.hasText(query, "Query must not be null or empty");
 
     return CONSTRUCTOR_EXPRESSION.matcher(query).find();
   }
 
   public static String getProjection(String query) {
-
     Assert.hasText(query, "Query must not be null or empty");
 
     Matcher matcher = PROJECTION_CLAUSE.matcher(query);
@@ -531,9 +497,8 @@ public class QueryUtils {
   }
 
   @SuppressWarnings("unchecked")
-  private static jakarta.persistence.criteria.Order toJpaOrder(
+  public static jakarta.persistence.criteria.Order toJpaOrder(
       Sort.Order order, From<?, ?> from, CriteriaBuilder cb) {
-
     PropertyPath property = PropertyPath.from(order.getProperty(), from.getJavaType());
     Expression<?> expression = toExpressionRecursively(from, property);
 
@@ -545,26 +510,23 @@ public class QueryUtils {
     }
   }
 
-  static <T> Expression<T> toExpressionRecursively(From<?, ?> from, PropertyPath property) {
+  public static <T> Expression<T> toExpressionRecursively(From<?, ?> from, PropertyPath property) {
     return toExpressionRecursively(from, property, false);
   }
 
-  static <T> Expression<T> toExpressionRecursively(
+  public static <T> Expression<T> toExpressionRecursively(
       From<?, ?> from, PropertyPath property, boolean isForSelection) {
     return toExpressionRecursively(from, property, isForSelection, false);
   }
 
   @SuppressWarnings("unchecked")
-  static <T> Expression<T> toExpressionRecursively(
+  public static <T> Expression<T> toExpressionRecursively(
       From<?, ?> from,
       PropertyPath property,
       boolean isForSelection,
       boolean hasRequiredOuterJoin) {
-
     String segment = property.getSegment();
-
     boolean isLeafProperty = !property.hasNext();
-
     boolean requiresOuterJoin =
         requiresOuterJoin(from, property, isForSelection, hasRequiredOuterJoin);
 
@@ -594,7 +556,6 @@ public class QueryUtils {
       PropertyPath property,
       boolean isForSelection,
       boolean hasRequiredOuterJoin) {
-
     String segment = property.getSegment();
 
     // already inner joined so outer join is useless
@@ -623,9 +584,7 @@ public class QueryUtils {
 
     // is the attribute of Collection type?
     boolean isPluralAttribute = model instanceof PluralAttribute;
-
     boolean isLeafProperty = !property.hasNext();
-
     if (propertyPathModel == null && isPluralAttribute) {
       return true;
     }
@@ -662,7 +621,6 @@ public class QueryUtils {
   @Nullable
   private static <T> T getAnnotationProperty(
       Attribute<?, ?> attribute, String propertyName, T defaultValue) {
-
     Class<? extends Annotation> associationAnnotation =
         ASSOCIATION_TYPES.get(attribute.getPersistentAttributeType());
 
@@ -683,9 +641,7 @@ public class QueryUtils {
   }
 
   private static Join<?, ?> getOrCreateJoin(From<?, ?> from, String attribute, JoinType joinType) {
-
     for (Join<?, ?> join : from.getJoins()) {
-
       if (join.getAttribute().getName().equals(attribute)) {
         return join;
       }
@@ -694,9 +650,7 @@ public class QueryUtils {
   }
 
   private static boolean isAlreadyInnerJoined(From<?, ?> from, String attribute) {
-
     for (Fetch<?, ?> fetch : from.getFetches()) {
-
       if (fetch.getAttribute().getName().equals(attribute) //
           && fetch.getJoinType().equals(JoinType.INNER)) {
         return true;
@@ -704,7 +658,6 @@ public class QueryUtils {
     }
 
     for (Join<?, ?> join : from.getJoins()) {
-
       if (join.getAttribute().getName().equals(attribute) //
           && join.getJoinType().equals(JoinType.INNER)) {
         return true;
@@ -715,7 +668,6 @@ public class QueryUtils {
   }
 
   static void checkSortExpression(Sort.Order order) {
-
     if (order instanceof JpaSort.JpaOrder jpaOrder && jpaOrder.isUnsafe()) {
       return;
     }

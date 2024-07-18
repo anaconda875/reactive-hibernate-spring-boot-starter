@@ -42,7 +42,6 @@ public class ReactiveJpaParameters
     private @Nullable TemporalType temporalType;
 
     protected JpaParameter(MethodParameter parameter) {
-
       super(parameter, TypeInformation.of(Parameter.class));
 
       this.annotation = parameter.getParameterAnnotation(Temporal.class);
@@ -65,7 +64,6 @@ public class ReactiveJpaParameters
 
     @Nullable
     TemporalType getTemporalType() {
-
       if (temporalType == null) {
         this.temporalType = annotation == null ? null : annotation.value();
       }
@@ -74,7 +72,6 @@ public class ReactiveJpaParameters
     }
 
     TemporalType getRequiredTemporalType() throws IllegalStateException {
-
       TemporalType temporalType = getTemporalType();
 
       if (temporalType != null) {
