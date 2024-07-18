@@ -7,6 +7,7 @@ import com.htech.data.jpa.reactive.repository.query.Jpa21Utils;
 import com.htech.data.jpa.reactive.repository.query.QueryUtils;
 import com.htech.jpa.reactive.connection.SessionContextHolder;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.criteria.*;
 import java.io.Serial;
 import java.util.*;
@@ -94,17 +95,13 @@ public class SimpleReactiveJpaRepository<T, ID>
               Mono<T> rs;
               // TODO: entity graph??
               if (lockModeType == null) {
-                rs =
-                    Mono.defer(
-                        () ->
-                            Mono.fromCompletionStage(
-                                session.find(entityInformation.getJavaType(), id)));
+                rs = Mono.defer(() -> Mono.fromCompletionStage(session.find(getDomainClass(), id)));
               } else {
                 rs =
                     Mono.defer(
                         () ->
                             Mono.fromCompletionStage(
-                                session.find(entityInformation.getJavaType(), id, lockModeType)));
+                                session.find(getDomainClass(), id, lockModeType)));
               }
 
               return rs.map(e -> (S) e);
@@ -114,7 +111,7 @@ public class SimpleReactiveJpaRepository<T, ID>
   @Override
   public Mono<T> getReferenceById(ID id) {
     return SessionContextHolder.currentSession()
-        .map(session -> session.getReference(entityInformation.getJavaType(), id));
+        .map(session -> session.getReference(getDomainClass(), id));
   }
 
   @Override
@@ -332,9 +329,37 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   @Override
+  public Mono<T> findOne(Specification<T> spec) {
+    return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
+        .flatMap(
+            t ->
+                Mono.defer(
+                    () ->
+                        Mono.fromCompletionStage(
+                                getQuery(t.getT1(), spec, Sort.unsorted(), t.getT2())
+                                    .setMaxResults(2)
+                                    .getSingleResult())
+                            .onErrorResume(NoResultException.class, e -> Mono.empty())));
+  }
+
+  @Override
   public Flux<T> findAll(Specification<T> spec) {
     return findAll(SessionContextHolder.currentSession(), spec, Pageable.unpaged())
         .flatMapMany(page -> Flux.fromIterable(page.getContent()));
+  }
+
+  @Override
+  public Flux<T> findAll(Specification<T> spec, Sort sort) {
+    return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
+        .flatMap(
+            t ->
+                Mono.defer(
+                    () ->
+                        Mono.fromCompletionStage(
+                            getQuery(t.getT1(), spec, sort, t.getT2()).getResultList())))
+        .flatMapMany(Flux::fromIterable);
   }
 
   @Override
@@ -346,6 +371,65 @@ public class SimpleReactiveJpaRepository<T, ID>
   @Override
   public Mono<Page<T>> findAll(Specification<T> spec, Pageable pageable) {
     return findAll(SessionContextHolder.currentSession(), spec, pageable);
+  }
+
+  @Override
+  public Mono<Long> count(Specification<T> spec) {
+    return SessionContextHolder.currentSession()
+        .flatMap(s -> executeCountQuery(getCountQuery(s, spec, getDomainClass())));
+  }
+
+  @Override
+  public Mono<Boolean> exists(Specification<T> spec) {
+    return SessionContextHolder.currentSession()
+        .zipWhen(__ -> CrudMethodMetadataContextHolder.currentCrudMethodMetadata())
+        .flatMap(
+            t -> {
+              Stage.Session session = t.getT1();
+              CriteriaQuery<Integer> cq =
+                  sessionFactory
+                      .getCriteriaBuilder()
+                      .createQuery(Integer.class)
+                      .select(sessionFactory.getCriteriaBuilder().literal(1));
+
+              applySpecificationToCriteria(spec, getDomainClass(), cq);
+
+              return Mono.defer(
+                  () ->
+                      Mono.fromCompletionStage(
+                              applyRepositoryMethodMetadata(
+                                      session.createQuery(cq), session, t.getT2())
+                                  .setMaxResults(1)
+                                  .getResultList())
+                          .map(l -> l.size() == 1));
+            });
+  }
+
+  @Override
+  public Mono<Long> delete(Specification<T> spec) {
+    return SessionContextHolder.currentSession()
+        .flatMap(
+            s -> {
+              CriteriaBuilder builder = sessionFactory.getCriteriaBuilder();
+              CriteriaDelete<T> delete = builder.createCriteriaDelete(getDomainClass());
+
+              if (spec != null) {
+                Predicate predicate =
+                    spec.toPredicate(delete.from(getDomainClass()), null, builder);
+
+                if (predicate != null) {
+                  delete.where(predicate);
+                }
+              }
+
+              return Mono.defer(
+                      () -> Mono.fromCompletionStage(s.createQuery(delete).executeUpdate()))
+                  .map(i -> (long) i);
+            });
+  }
+
+  protected Class<T> getDomainClass() {
+    return entityInformation.getJavaType();
   }
 
   protected Mono<Page<T>> findAll(
@@ -360,8 +444,7 @@ public class SimpleReactiveJpaRepository<T, ID>
                           getQuery(t.getT1(), spec, pageable, t.getT2());
                       return pageable.isUnpaged()
                           ? Mono.fromCompletionStage(query.getResultList()).map(PageImpl::new)
-                          : readPage(
-                              query, entityInformation.getJavaType(), pageable, spec, t.getT1());
+                          : readPage(query, getDomainClass(), pageable, spec, t.getT1());
                     }));
   }
 
@@ -385,7 +468,7 @@ public class SimpleReactiveJpaRepository<T, ID>
     }
 
     return Mono.defer(() -> Mono.fromCompletionStage(query.getResultList()))
-        .zipWhen(__ -> executeCountQuery(getCountQuery(spec, javaType, session)))
+        .zipWhen(__ -> executeCountQuery(getCountQuery(session, spec, javaType)))
         .map(t -> PageableExecutionUtils.getPage(t.getT1(), pageable, t::getT2));
   }
 
@@ -395,7 +478,7 @@ public class SimpleReactiveJpaRepository<T, ID>
       Pageable pageable,
       CrudMethodMetadata metadata) {
     Sort sort = pageable.isPaged() ? pageable.getSort() : Sort.unsorted();
-    return getQuery(session, spec, entityInformation.getJavaType(), sort, metadata);
+    return getQuery(session, spec, getDomainClass(), sort, metadata);
   }
 
   private String getCountQueryString() {
@@ -404,7 +487,7 @@ public class SimpleReactiveJpaRepository<T, ID>
   }
 
   protected <S extends T> Stage.SelectionQuery<Long> getCountQuery(
-      @Nullable Specification<S> spec, Class<S> domainClass, Stage.Session session) {
+      Stage.Session session, @Nullable Specification<S> spec, Class<S> domainClass) {
     CriteriaBuilder builder = sessionFactory.getCriteriaBuilder();
     CriteriaQuery<Long> query = builder.createQuery(Long.class);
 
@@ -427,7 +510,7 @@ public class SimpleReactiveJpaRepository<T, ID>
       @Nullable Specification<T> spec,
       Sort sort,
       CrudMethodMetadata metadata) {
-    return getQuery(session, spec, entityInformation.getJavaType(), sort, metadata);
+    return getQuery(session, spec, getDomainClass(), sort, metadata);
   }
 
   protected <S extends T> Stage.SelectionQuery<S> getQuery(
@@ -487,7 +570,7 @@ public class SimpleReactiveJpaRepository<T, ID>
                 metadata.getEntityGraph(),
                 (s, graph) ->
                     Jpa21Utils.getFetchGraphHint(
-                        s, getEntityGraph(graph, metadata), entityInformation.getJavaType()))
+                        s, getEntityGraph(graph, metadata), getDomainClass()))
             .orElseGet(MutableQueryHints::new);
     queryHintsForEntityGraphs.forEach(
         (k, v) -> query.setPlan((jakarta.persistence.EntityGraph<S>) v));
