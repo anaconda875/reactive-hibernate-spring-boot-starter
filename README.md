@@ -13,7 +13,7 @@
 11. Of course, it is truly non-blocking and compatible with Webflux
 
 ### Some remaining things:
-1. Isolation level ([#1098](https://github.com/hibernate/hibernate-reactive/issues/1098)), savepoint
+1. Isolation level ([#875](https://github.com/hibernate/hibernate-reactive/issues/875)), savepoint
 2. Stored procedure ([#1446](https://github.com/eclipse-vertx/vertx-sql-client/issues/1446) and [#637](https://github.com/hibernate/hibernate-reactive/issues/637))
 3. Code optimization
 
