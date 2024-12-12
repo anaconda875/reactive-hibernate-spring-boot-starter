@@ -267,6 +267,7 @@ resume a transaction, suspend, commit or rollback it.
 - A custom [EntityCallback](src/main/java/com/htech/data/jpa/reactive/mapping/event/ReactiveAuditingEntityCallback.java) was created to invoke Auditing functions.
 
 **5. How does the library share common objects (Session, CrudMetadata, etc)?**
+
 Unlike Spring Web which is using `ThreadLocal` to share common objects, the library
 use `Context` APIs which is provided by `reactor` as `ThreadLocal` may not work in
 reactive app.
