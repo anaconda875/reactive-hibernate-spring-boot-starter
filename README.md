@@ -1,5 +1,5 @@
 ## This module's aim is to bring Reactive Hibernate support to Spring Data.
-### Some features:
+### Some features
 1. Useful Crud and Paging/Sorting methods (just like spring-data-jpa)
 2. Custom query methods (findBy\*And\*OrderBy*, @Query("FROM Abc")), native queries are also supported
 3. Support `@Transactional` (**propagation, readOnly, rollbackFor, timeout, noRollbackFor, ...**)
@@ -12,12 +12,12 @@
 10. Auto-config
 11. Of course, it is truly non-blocking and compatible with Webflux
 
-### Some remaining things:
+### Some remaining things
 1. Isolation level ([#875](https://github.com/hibernate/hibernate-reactive/issues/875) and [#432](https://github.com/eclipse-vertx/vertx-sql-client/issues/432)), savepoint
 2. Stored procedure ([#1446](https://github.com/eclipse-vertx/vertx-sql-client/issues/1446) and [#637](https://github.com/hibernate/hibernate-reactive/issues/637))
 3. Code optimization
 
-## Getting started:
+## Getting started
 **1. Dependency and config:**
 ```xml
 <dependency>
@@ -230,6 +230,46 @@ public class Config {
 ```
 
 **6. TO BE CONTINUED...**
+
+## Architecture
+**1. Auto-config**
+- An [Auto-config](./src/main/java/com/htech/jpa/reactive/ReactiveHibernateJpaAutoConfiguration.java)
+was implemented for registering Hibernate Reactive related (PersistentUnit, EntityManagerFactory, SessionFactory, etc)
+- An [Auto-config](./src/main/java/com/htech/data/jpa/reactive/core/ReactiveJpaDataAutoConfiguration.java)
+was implemented for registering Repositories (Spring Data related)
+
+**2. Repository internal working**
+- This project is 40% based on Spring Data Common
+- Spring use Dynamic Proxy and AOP to create Repositories
+- All custom methods (findBy**Title**, `@Query`) will be registered as metadata
+  (see [ReactiveJpaQueryLookupStrategy](./src/main/java/com/htech/data/jpa/reactive/repository/query/ReactiveJpaQueryLookupStrategy.java))
+- A chain of [Advices](./src/main/java/com/htech/data/jpa/reactive/repository/support)
+  was added to handle method invocations (findBy**Slug**, save, @Query, etc)
+    -  Case 1: Crud methods (findById, findAll, save, delete, etc): The interceptor will invoke
+       [SimpleReactiveJpaRepository](./src/main/java/com/htech/data/jpa/reactive/repository/support/SimpleReactiveJpaRepository.java)
+        ![crud](./images/crud.png)
+    - Case 2: Query methods (findByTagOrSlugOrderByDate, @Query, NamedQuery)
+    
+      The interceptor will invoke RepositoryQuery
+
+      ![img](./images/query.png)
+    - Case 3: `@Lock`, `@EntityGraph` - see [AbstractReactiveJpaQuery](./src/main/java/com/htech/data/jpa/reactive/repository/query/AbstractReactiveJpaQuery.java)
+    - Case 4: SpEL - see [SpELParameterValueEvaluator](src/main/java/com/htech/data/jpa/reactive/repository/query/SpELParameterValueEvaluator.java)
+    - Case 5: Native query - see [NativeReactiveJpaQuery](src/main/java/com/htech/data/jpa/reactive/repository/query/NativeReactiveJpaQuery.java)
+    - Case 6: Named query - see [NamedQuery](src/main/java/com/htech/data/jpa/reactive/repository/query/NamedQuery.java)
+
+**3. Transactional**
+- Extending an abstract class provided by Spring. It provides useful methods like open a transaction,
+resume a transaction, suspend, commit or rollback it.
+- Spring registered an Interceptor to handle `@Transactional` by invoking our [implementation](src/main/java/com/htech/jpa/reactive/connection/ReactiveHibernateTransactionManager.java).
+
+**4. Auditing**
+- A custom [EntityCallback](src/main/java/com/htech/data/jpa/reactive/mapping/event/ReactiveAuditingEntityCallback.java) was created to invoke Auditing functions.
+
+**5. How does the library share common objects (Session, CrudMetadata, etc)?**
+Unlike Spring Web which is using `ThreadLocal` to share common objects, the library
+use `Context` APIs which is provided by `reactor` as `ThreadLocal` may not work in
+reactive app.
 
 This is an example of how to use it (with Postgres): https://github.com/anaconda875/spring-hibernate-reactive-mutiny-example
 
