@@ -6,12 +6,13 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.2</version>
+        <version>3.3.10</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>io.github.anaconda875</groupId>
     <artifactId>reactive-hibernate-spring-boot-starter</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.5</version>
+    <name>Spring Boot Starter for Reactive JPA</name>
     <description>Integrate Reactive Hibernate to Spring Data with Auto-config</description>
 
     <licenses>
@@ -40,8 +41,8 @@
     <properties>
         <java.version>17</java.version>
 
-        <hibernate-reactive.version>2.3.0.Final</hibernate-reactive.version>
-        <hibernate.version>6.5.0.Final</hibernate.version>
+        <hibernate-reactive.version>2.3.1.Final</hibernate-reactive.version>
+        <hibernate.version>6.5.3.Final</hibernate.version>
 
         <!-- maven plugins -->
         <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
@@ -100,7 +101,7 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>0.4.0</version>
+                        <version>0.9.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
@@ -202,6 +203,7 @@
                 <executions>
                     <execution>
                         <id>attach-sources</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
@@ -215,6 +217,7 @@
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
                         </goals>
