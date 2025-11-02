@@ -1,6 +1,11 @@
 package com.htech.data.jpa.reactive.repository.query;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
+
+import org.springframework.data.expression.ValueEvaluationContext;
+import org.springframework.data.expression.ValueExpression;
+import org.springframework.data.expression.ValueExpressionParser;
 import org.springframework.data.jpa.repository.query.JpaEntityMetadata;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ParserContext;
@@ -17,8 +22,7 @@ public class ExpressionBasedStringQuery extends StringQuery {
   private static final String QUOTED_EXPRESSION_PARAMETER = "$1__HASH__{";
 
   private static final Pattern EXPRESSION_PARAMETER_QUOTING = Pattern.compile("([:?])#\\{");
-  private static final Pattern EXPRESSION_PARAMETER_UNQUOTING =
-      Pattern.compile("([:?])__HASH__\\{");
+  private static final Pattern EXPRESSION_PARAMETER_UNQUOTING = Pattern.compile("([:?])__HASH__\\{");
 
   private static final String ENTITY_NAME = "entityName";
   private static final String ENTITY_NAME_VARIABLE = "#" + ENTITY_NAME;
@@ -27,7 +31,7 @@ public class ExpressionBasedStringQuery extends StringQuery {
   public ExpressionBasedStringQuery(
       String query,
       JpaEntityMetadata<?> metadata,
-      SpelExpressionParser parser,
+      ValueExpressionParser parser,
       boolean nativeQuery) {
     super(
         renderQueryIfExpressionOrReturnQuery(query, metadata, parser),
@@ -37,14 +41,13 @@ public class ExpressionBasedStringQuery extends StringQuery {
   static ExpressionBasedStringQuery from(
       DeclaredQuery query,
       JpaEntityMetadata<?> metadata,
-      SpelExpressionParser parser,
+      ValueExpressionParser parser,
       boolean nativeQuery) {
     return new ExpressionBasedStringQuery(query.getQueryString(), metadata, parser, nativeQuery);
   }
 
   private static String renderQueryIfExpressionOrReturnQuery(
-      String query, JpaEntityMetadata<?> metadata, SpelExpressionParser parser) {
-
+      String query, JpaEntityMetadata<?> metadata, ValueExpressionParser parser) {
     Assert.notNull(query, "query must not be null");
     Assert.notNull(metadata, "metadata must not be null");
     Assert.notNull(parser, "parser must not be null");
@@ -58,9 +61,9 @@ public class ExpressionBasedStringQuery extends StringQuery {
 
     query = potentiallyQuoteExpressionsParameter(query);
 
-    Expression expr = parser.parseExpression(query, ParserContext.TEMPLATE_EXPRESSION);
+    ValueExpression expr = parser.parse(query);
 
-    String result = expr.getValue(evalContext, String.class);
+    String result = Objects.toString(expr.evaluate(ValueEvaluationContext.of(null, evalContext)));
 
     if (result == null) {
       return query;

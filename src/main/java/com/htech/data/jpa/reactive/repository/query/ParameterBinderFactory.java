@@ -2,10 +2,14 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+
+import org.springframework.data.expression.ReactiveValueEvaluationContextProvider;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.util.Assert;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ParameterBinderFactory {
 
   static ParameterBinder createBinder(ReactiveJpaParameters parameters) {
@@ -34,17 +38,16 @@ public class ParameterBinderFactory {
   static ParameterBinder createQueryAwareBinder(
       ReactiveJpaParameters parameters,
       DeclaredQuery query,
-      SpelExpressionParser parser,
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
+      ValueExpressionDelegate delegate,
+      ReactiveValueEvaluationContextProvider valueExpressionContextProvider) {
 
     Assert.notNull(parameters, "ReactiveJpaParameters must not be null");
     Assert.notNull(query, "StringQuery must not be null");
-    Assert.notNull(parser, "SpelExpressionParser must not be null");
-    Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null");
+    Assert.notNull(delegate, "ValueExpressionDelegate must not be null");
 
     List<ParameterBinding> bindings = query.getParameterBindings();
-    QueryParameterSetterFactory expressionSetterFactory =
-        QueryParameterSetterFactory.parsing(parser, evaluationContextProvider, parameters);
+    QueryParameterSetterFactory expressionSetterFactory = QueryParameterSetterFactory.parsing(delegate,
+        valueExpressionContextProvider);
 
     QueryParameterSetterFactory basicSetterFactory = QueryParameterSetterFactory.basic(parameters);
 

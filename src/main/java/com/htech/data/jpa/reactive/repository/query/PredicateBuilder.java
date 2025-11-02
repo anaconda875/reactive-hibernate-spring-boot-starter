@@ -79,8 +79,8 @@ public class PredicateBuilder {
           ParameterExpression<Object> parameterExpression = provider.next(part).getExpression();
 
           // Can't just call .not() in case of negation as EclipseLink chokes on that.
-          return type.equals(NOT_CONTAINING) //
-              ? isNotMember(builder, parameterExpression, propertyExpression) //
+          return type.equals(NOT_CONTAINING)
+              ? isNotMember(builder, parameterExpression, propertyExpression)
               : isMember(builder, parameterExpression, propertyExpression);
         }
 

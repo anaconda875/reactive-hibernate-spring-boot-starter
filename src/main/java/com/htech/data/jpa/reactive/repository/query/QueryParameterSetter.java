@@ -29,15 +29,12 @@ public interface QueryParameterSetter {
 
   class NamedOrIndexedQueryParameterSetter implements QueryParameterSetter {
 
-    //    protected final boolean useIndexBasedParams;
-    //    protected final Function<JpaParametersParameterAccessor, Object> valueExtractor;
     protected final ParameterValueEvaluator valueEvaluator;
     protected final ParameterBinding binding;
     protected final Parameter<?> parameter;
     protected final @Nullable TemporalType temporalType;
 
     NamedOrIndexedQueryParameterSetter(
-        //        Function<JpaParametersParameterAccessor, Object> valueExtractor,
         ParameterValueEvaluator valueEvaluator,
         ParameterBinding binding,
         Parameter<?> parameter,
@@ -86,24 +83,6 @@ public interface QueryParameterSetter {
                   }
                 })
             .then();
-
-        //        if (parameter instanceof ParameterExpression) {
-        //          return errorHandling.execute(
-        //              () -> query.setParameter((Parameter<Object>) parameter, value));
-        //        } else if (parameter.getName() != null) {
-        //          return errorHandling.execute(() -> query.setParameter(parameter.getName(),
-        // value));
-        //
-        //        } else {
-        //          Integer position = parameter.getPosition();
-        //
-        //          if (position != null) {
-        //            return errorHandling.execute(() -> query.setParameter(position, value));
-        //          }
-        //        }
-
-        //        return Mono.error(
-        //            () -> new IllegalStateException("Illegal parameter " + parameter.getClass()));
       }
     }
   }
@@ -121,14 +100,6 @@ public interface QueryParameterSetter {
 
       @Override
       public void execute(Runnable block) {
-        //        return Mono.fromRunnable(block)
-        //            .onErrorResume(
-        //                RuntimeException.class,
-        //                rex -> {
-        //                  LOG.info("Silently ignoring", rex);
-        //                  return Mono.empty();
-        //                })
-        //            .then();
         try {
           block.run();
         } catch (RuntimeException rex) {
@@ -182,22 +153,21 @@ public interface QueryParameterSetter {
       /* this.namedParameters = QueryUtils.hasNamedParameter(query);
       this.parameters = query.getParameters();
 
-      // DATAJPA-1172
-      // Since EclipseLink doesn't reliably report whether a query has parameters
-      // we simply try to set the parameters and ignore possible failures.
-      // this is relevant for native queries with SpEL expressions, where the method parameters don't have to match the
-      // parameters in the query.
-      // https://bugs.eclipse.org/bugs/show_bug.cgi?id=521915
+       DATAJPA-1172
+       Since EclipseLink doesn't reliably report whether a query has parameters
+       we simply try to set the parameters and ignore possible failures.
+       this is relevant for native queries with SpEL expressions, where the method parameters don't have to match the
+       parameters in the query.
+       https://bugs.eclipse.org/bugs/show_bug.cgi?id=521915
 
       this.registerExcessParameters = query.getParameters().size() == 0
           && unwrapClass(query).getName().startsWith("org.eclipse");*/
     }
 
     QueryMetadata(QueryParameterSetter.QueryMetadata metadata) {
-
-      //      this.namedParameters = metadata.namedParameters;
-      //      this.parameters = metadata.parameters;
-      //      this.registerExcessParameters = metadata.registerExcessParameters;
+      /*this.namedParameters = metadata.namedParameters;
+      this.parameters = metadata.parameters;
+      this.registerExcessParameters = metadata.registerExcessParameters;*/
     }
 
     public QueryParameterSetter.BindableQuery withQuery(Stage.AbstractQuery query) {
@@ -222,8 +192,8 @@ public interface QueryParameterSetter {
 
       try {
 
-        return Proxy.isProxyClass(queryType) //
-            ? query.unwrap(null).getClass() //
+        return Proxy.isProxyClass(queryType)
+            ? query.unwrap(null).getClass()
             : queryType;
 
       } catch (RuntimeException e) {

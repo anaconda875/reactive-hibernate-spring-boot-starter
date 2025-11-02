@@ -5,6 +5,8 @@ import static org.springframework.util.ObjectUtils.nullSafeHashCode;
 
 import java.lang.reflect.Array;
 import java.util.*;
+
+import org.springframework.data.expression.ValueExpression;
 import org.springframework.data.jpa.provider.PersistenceProvider;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.util.NullableWrapperConverters;
@@ -13,6 +15,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ParameterBinding {
 
   private final ParameterBinding.BindingIdentifier identifier;
@@ -93,11 +98,12 @@ public class ParameterBinding {
     return String.format("ParameterBinding [identifier: %s, origin: %s]", identifier, origin);
   }
 
-  public Optional<Object> prepare(Object valueToBind) {
-    if (valueToBind instanceof Optional<?> op) {
-      return (Optional<Object>) op;
-    }
-    return Optional.ofNullable(valueToBind);
+  public Object prepare(Object valueToBind) {
+    return valueToBind;
+//    if (valueToBind instanceof Optional<?> op) {
+//      return (Optional<Object>) op;
+//    }
+//    return Optional.ofNullable(valueToBind);
   }
 
   public boolean bindsTo(ParameterBinding other) {
@@ -128,13 +134,13 @@ public class ParameterBinding {
     }
 
     @Override
-    public Optional<Object> prepare(Object value) {
+    public Object prepare(Object value) {
       if (NullableWrapperConverters.supports(value.getClass())) {
         value = NullableWrapperConverters.unwrap(value);
       }
 
       if (!ObjectUtils.isArray(value)) {
-        return Optional.ofNullable(value);
+        return value;
       }
 
       int length = Array.getLength(value);
@@ -144,7 +150,7 @@ public class ParameterBinding {
         result.add(Array.get(value, i));
       }
 
-      return Optional.of(result);
+      return result;
     }
   }
 
@@ -180,21 +186,21 @@ public class ParameterBinding {
 
     @Nullable
     @Override
-    public Optional<Object> prepare(Object value) {
+    public Object prepare(Object value) {
       if (NullableWrapperConverters.supports(value.getClass())) {
         value = NullableWrapperConverters.unwrap(value);
       }
 
       Object unwrapped = PersistenceProvider.unwrapTypedParameterValue(value);
       if (unwrapped == null) {
-        return Optional.empty();
+        return null;
       }
 
       return switch (type) {
-        case STARTING_WITH -> Optional.of(String.format("%s%%", unwrapped));
-        case ENDING_WITH -> Optional.of(String.format("%%%s", unwrapped));
-        case CONTAINING -> Optional.of(String.format("%%%s%%", unwrapped));
-        default -> Optional.of(unwrapped);
+        case STARTING_WITH -> String.format("%s%%", unwrapped);
+        case ENDING_WITH -> String.format("%%%s", unwrapped);
+        case CONTAINING -> String.format("%%%s%%", unwrapped);
+        default -> unwrapped;
       };
     }
 
@@ -367,7 +373,7 @@ public class ParameterBinding {
   sealed interface ParameterOrigin
       permits ParameterBinding.Expression, ParameterBinding.MethodInvocationArgument {
 
-    static ParameterBinding.Expression ofExpression(String expression) {
+    static ParameterBinding.Expression ofExpression(ValueExpression expression) {
       return new ParameterBinding.Expression(expression);
     }
 
@@ -400,7 +406,7 @@ public class ParameterBinding {
     boolean isExpression();
   }
 
-  public record Expression(String expression) implements ParameterBinding.ParameterOrigin {
+  public record Expression(ValueExpression expression) implements ParameterBinding.ParameterOrigin {
 
     @Override
     public boolean isMethodArgument() {

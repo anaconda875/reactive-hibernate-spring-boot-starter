@@ -154,10 +154,10 @@ public class QueryUtils {
       String entityName, String countQueryPlaceHolder, Iterable<String> idAttributes) {
 
     String whereClause =
-        Streamable.of(idAttributes).stream() //
+        Streamable.of(idAttributes).stream()
             .map(
                 idAttribute ->
-                    String.format(EQUALS_CONDITION_STRING, "x", idAttribute, idAttribute)) //
+                    String.format(EQUALS_CONDITION_STRING, "x", idAttribute, idAttribute))
             .collect(Collectors.joining(" AND ", " WHERE ", ""));
 
     return String.format(COUNT_QUERY_STRING, countQueryPlaceHolder, entityName) + whereClause;
@@ -227,8 +227,8 @@ public class QueryUtils {
 
     if (selectionAlias.contains(property)) {
       return String.format(
-          "%s %s", //
-          order.isIgnoreCase() ? String.format("lower(%s)", property) : property, //
+          "%s %s",
+          order.isIgnoreCase() ? String.format("lower(%s)", property) : property,
           toJpaDirection(order));
     }
 
@@ -416,7 +416,7 @@ public class QueryUtils {
     if (countProjection == null) {
       String variable = matcher.matches() ? matcher.group(VARIABLE_NAME_GROUP_INDEX) : null;
       boolean useVariable =
-          StringUtils.hasText(variable) //
+          StringUtils.hasText(variable)
               && !variable.startsWith("new") // select [new com.example.User...
               && !variable.startsWith(" new") // select distinct[ new com.example.User...
               && !variable.startsWith("count(") // select [count(...
@@ -651,14 +651,14 @@ public class QueryUtils {
 
   private static boolean isAlreadyInnerJoined(From<?, ?> from, String attribute) {
     for (Fetch<?, ?> fetch : from.getFetches()) {
-      if (fetch.getAttribute().getName().equals(attribute) //
+      if (fetch.getAttribute().getName().equals(attribute)
           && fetch.getJoinType().equals(JoinType.INNER)) {
         return true;
       }
     }
 
     for (Join<?, ?> join : from.getJoins()) {
-      if (join.getAttribute().getName().equals(attribute) //
+      if (join.getAttribute().getName().equals(attribute)
           && join.getJoinType().equals(JoinType.INNER)) {
         return true;
       }

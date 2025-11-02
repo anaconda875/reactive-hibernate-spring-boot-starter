@@ -14,7 +14,6 @@ public class ReactiveJpaQueryMethodFactory implements JpaQueryMethodFactory {
   private final ReactiveJpaQueryExtractor extractor;
 
   public ReactiveJpaQueryMethodFactory(ReactiveJpaQueryExtractor extractor) {
-    //    Assert.notNull(extractor, "QueryExtractor must not be null");
     this.extractor = extractor;
   }
 

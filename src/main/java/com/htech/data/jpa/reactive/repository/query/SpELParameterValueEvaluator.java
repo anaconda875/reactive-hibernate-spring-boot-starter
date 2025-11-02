@@ -1,34 +1,32 @@
 package com.htech.data.jpa.reactive.repository.query;
 
-import java.util.Optional;
+import org.springframework.data.expression.*;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
-import org.springframework.data.repository.query.Parameters;
-import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
-import org.springframework.expression.Expression;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 /**
  * @author Bao.Ngo
  */
 public class SpELParameterValueEvaluator implements ParameterValueEvaluator {
 
-  private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
-  private final Parameters<?, ?> parameters;
-  private final Expression expression;
+  private final ValueExpression expression;
+  private final ReactiveValueEvaluationContextProvider evaluationContextProvider;
 
   public SpELParameterValueEvaluator(
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
-      Parameters<?, ?> parameters,
-      Expression expression) {
-    this.evaluationContextProvider = evaluationContextProvider;
-    this.parameters = parameters;
+      ValueExpression expression,
+      ReactiveValueEvaluationContextProvider evaluationContextProvider) {
     this.expression = expression;
+    this.evaluationContextProvider = evaluationContextProvider;
   }
 
   @Override
   public Mono<Optional<Object>> evaluate(JpaParametersParameterAccessor accessor) {
     return evaluationContextProvider
-        .getEvaluationContextLater(parameters, accessor.getValues())
-        .map(context -> Optional.ofNullable(expression.getValue(context, Object.class)));
+        .getEvaluationContextLater(accessor.getValues())
+        .map(context -> Optional.ofNullable(expression.evaluate(context)));
   }
+
+
 }

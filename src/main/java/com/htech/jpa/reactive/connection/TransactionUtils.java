@@ -5,10 +5,17 @@ import static org.springframework.transaction.reactive.TransactionSynchronizatio
 import java.util.Objects;
 import org.hibernate.reactive.stage.Stage;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 public class TransactionUtils {
 
   private TransactionUtils() {}
+
+  private static final Object KEY = TransactionUtils.class;
+
+  public static Context setTransactionState(Stage.SessionFactory sessionFactory) {
+    return Context.of(KEY, isTransactionAvailable(sessionFactory));
+  }
 
   public static Mono<Boolean> isTransactionAvailable(Stage.SessionFactory sessionFactory) {
     return forCurrentTransaction()

@@ -137,7 +137,6 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
       ReactiveJpaQueryMethod method) {
     ReactiveJpaQueryMethod queryMethod = getQueryMethod();
     ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
-    //    Class<?> typeToRead = getTypeToRead(processor.getReturnedType());
 
     return session
         .doOnNext(this::initialize)
@@ -153,22 +152,11 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
             })
         .zipWhen(q -> Mono.fromSupplier(() -> metadataCache.getMetadata(queryName, q)))
         .flatMap(t -> parameterBinder.get().bindAndPrepare(t.getT1(), t.getT2(), accessor));
-    //    Stage.AbstractQuery query = typeToRead == null //
-    //        ? em.createNamedQuery(queryName) //
-    //        : em.createNamedQuery(queryName, typeToRead);
-
-    //    QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(queryName, query);
-
-    //    return parameterBinder.get().bindAndPrepare(query, metadata, accessor);
-    // TODO
-    //    return Mono.empty();
   }
 
   @Override
   protected Mono<Stage.AbstractQuery> doCreateCountQuery(
       Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
-    //      Mono<Stage.AbstractQuery> countQuery;
-    //      String cacheKey = "";
     return session
         .doOnNext(this::initialize)
         .flatMap(
@@ -190,23 +178,6 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
 
               return parameterBinder.get().bind(countQuery, metadata, accessor);
             });
-
-    //    if (namedCountQueryIsPresent) {
-    //      cacheKey = countQueryName;
-    //      countQuery = session.map(s -> s.createNamedQuery(countQueryName, Long.class));
-    //    } else {
-    //      String countQueryString = declaredQuery.deriveCountQuery(null,
-    // countProjection).getQueryString();
-    //      cacheKey = countQueryString;
-    //      countQuery = em.createQuery(countQueryString, Long.class);
-    //    }
-
-    //    QueryParameterSetter.QueryMetadata metadata = metadataCache.getMetadata(cacheKey,
-    // countQuery);
-    //
-    //    return parameterBinder.get().bind(countQuery, metadata, accessor);
-    //    // TODO
-    //    return null;
   }
 
   @Override
@@ -242,19 +213,6 @@ public class NamedQuery extends AbstractReactiveJpaQuery {
     try {
       lock.lock();
       ReactiveJpaQueryExtractor extractor = method.getQueryExtractor();
-      //
-      //      Parameters<?, ?> parameters = method.getParameters();
-      //      if (parameters.hasSortParameter()) {
-      //        throw new IllegalStateException(
-      //            String.format(
-      //                "Finder method %s is backed by a NamedQuery and must "
-      //                    + "not contain a sort parameter as we cannot modify the query; Use
-      // @Query instead",
-      //                method));
-      //      }
-      //
-      //      this.namedCountQueryIsPresent = hasNamedQuery(emf, countQueryName);
-
       Stage.Query query = session.createNamedQuery(queryName);
       String queryString = extractor.extractQueryString(query);
       this.declaredQuery = DeclaredQuery.of(queryString, false);

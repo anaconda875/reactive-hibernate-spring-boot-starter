@@ -92,8 +92,8 @@ public class ParameterMetadataProvider {
                 .orElseThrow(() -> new IllegalArgumentException("o_O Parameter needs to be named"));
 
     ParameterExpression<T> expression =
-        parameter.isExplicitlyNamed() //
-            ? builder.parameter(reifiedType, name.get()) //
+        parameter.isExplicitlyNamed()
+            ? builder.parameter(reifiedType, name.get())
             : builder.parameter(reifiedType);
 
     Object value =
@@ -166,8 +166,8 @@ public class ParameterMetadataProvider {
         }
       }
 
-      return Collection.class.isAssignableFrom(expression.getJavaType()) //
-          ? upperIfIgnoreCase(ignoreCase, toCollection(value)) //
+      return Collection.class.isAssignableFrom(expression.getJavaType())
+          ? upperIfIgnoreCase(ignoreCase, toCollection(value))
           : value;
     }
 
@@ -198,12 +198,12 @@ public class ParameterMetadataProvider {
       }
 
       return ((Collection<String>) collection)
-          .stream() //
+          .stream()
               .map(
                   it ->
-                      it == null //
-                          ? null //
-                          : it.toUpperCase()) //
+                      it == null
+                          ? null
+                          : it.toUpperCase())
               .collect(Collectors.toList());
     }
   }

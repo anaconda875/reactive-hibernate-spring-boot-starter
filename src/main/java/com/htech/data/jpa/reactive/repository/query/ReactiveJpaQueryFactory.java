@@ -3,14 +3,14 @@ package com.htech.data.jpa.reactive.repository.query;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.repository.query.QueryCreationException;
-import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.lang.Nullable;
 
+/**
+ * @author Bao.Ngo
+ */
 public enum ReactiveJpaQueryFactory {
   INSTANCE;
-
-  private static final SpelExpressionParser PARSER = new SpelExpressionParser();
 
   AbstractReactiveJpaQuery fromMethodWithQueryString(
       ReactiveJpaQueryMethod method,
@@ -18,7 +18,7 @@ public enum ReactiveJpaQueryFactory {
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
+      ValueExpressionDelegate delegate) {
 
     if (method.isScrollQuery()) {
       throw QueryCreationException.create(
@@ -32,16 +32,14 @@ public enum ReactiveJpaQueryFactory {
             queryString,
             countQueryString,
             queryRewriter,
-            evaluationContextProvider,
-            PARSER)
+            delegate)
         : new SimpleReactiveJpaQuery(
             method,
             sessionFactory,
             queryString,
             countQueryString,
             queryRewriter,
-            evaluationContextProvider,
-            PARSER);
+            delegate);
   }
 
   // TODO

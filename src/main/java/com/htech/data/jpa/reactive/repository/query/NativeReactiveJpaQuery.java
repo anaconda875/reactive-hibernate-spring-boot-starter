@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.query.InvalidJpaQueryMethodExcept
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReturnedType;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
@@ -24,8 +25,7 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter rewriter,
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
-      SpelExpressionParser parser) {
+      ValueExpressionDelegate delegate) {
 
     super(
         method,
@@ -33,8 +33,7 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
         queryString,
         countQueryString,
         rewriter,
-        evaluationContextProvider,
-        parser);
+        delegate);
 
     Parameters<?, ?> parameters = method.getParameters();
 
@@ -59,12 +58,6 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
               ? s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
               : s.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable), type);
         });
-    //    Class<?> type = getTypeToQueryFor(returnedType);
-    //
-    //    return type == null
-    //        ? session.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable))
-    //        : session.createNativeQuery(potentiallyRewriteQuery(queryString, sort, pageable),
-    // type);
   }
 
   @Nullable
@@ -76,7 +69,7 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
     }
 
     return returnedType.isProjecting()
-            && !getMetamodel().isJpaManaged(returnedType.getReturnedType()) //
+            && !getMetamodel().isJpaManaged(returnedType.getReturnedType())
         ? Tuple.class
         : result;
   }

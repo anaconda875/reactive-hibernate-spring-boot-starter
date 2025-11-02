@@ -1,5 +1,6 @@
 package com.htech.data.jpa.reactive.core;
 
+import com.htech.data.jpa.reactive.repository.support.SurroundingTransactionDetectorMethodInterceptor;
 import com.htech.jpa.reactive.ReactiveHibernateJpaAutoConfiguration;
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -21,5 +22,11 @@ public class ReactiveJpaDataAutoConfiguration {
   public StageReactiveJpaEntityOperations reactiveJpaEntityTemplate(
       Stage.SessionFactory sessionFactory) {
     return new StageReactiveJpaEntityTemplate(sessionFactory);
+  }
+
+  @Bean
+  public SurroundingTransactionDetectorMethodInterceptor surroundingTransactionDetectorMethodInterceptor(
+      Stage.SessionFactory sessionFactory) {
+    return new SurroundingTransactionDetectorMethodInterceptor(sessionFactory);
   }
 }

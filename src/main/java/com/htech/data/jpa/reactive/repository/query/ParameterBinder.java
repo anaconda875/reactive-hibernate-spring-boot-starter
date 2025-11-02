@@ -44,7 +44,6 @@ public class ParameterBinder {
 
     return bind(metadata.withQuery(jpaQuery), accessor, QueryParameterSetter.ErrorHandling.STRICT)
         .thenReturn(jpaQuery);
-    //    return jpaQuery;
   }
 
   public Mono<Void> bind(
@@ -52,9 +51,6 @@ public class ParameterBinder {
       JpaParametersParameterAccessor accessor,
       QueryParameterSetter.ErrorHandling errorHandling) {
 
-    //    for (QueryParameterSetter setter : parameterSetters) {
-    //      setter.setParameter(query, accessor, errorHandling);
-    //    }
     return Flux.fromIterable(parameterSetters)
         .concatMap(setter -> setter.setParameter(query, accessor, errorHandling))
         .then();
@@ -83,18 +79,5 @@ public class ParameterBinder {
 
                   return Mono.just(query);
                 }));
-
-    //    if (!useJpaForPaging
-    //        || !parameters.hasLimitingParameters()
-    //        || accessor.getPageable().isUnpaged()) {
-    //      return query;
-    //    }
-
-    //    if (query instanceof Stage.SelectionQuery<?> selectionQuery) {
-    //      selectionQuery.setFirstResult(PageableUtils.getOffsetAsInteger(accessor.getPageable()));
-    //      selectionQuery.setMaxResults(accessor.getPageable().getPageSize());
-    //    }
-    //
-    //    return query;
   }
 }

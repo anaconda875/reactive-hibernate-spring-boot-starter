@@ -55,19 +55,6 @@ public class SimpleReactiveJpaRepository<T, ID>
     this.entityOperations = entityOperations;
   }
 
-  //  public static <T, ID> ReactiveJpaRepositoryImplementation<T, ID> createInstance(
-  //      JpaEntityInformation<T, ?> entityInformation,
-  //      Stage.SessionFactory sessionFactory,
-  //      ClassLoader classLoader) {
-  //    SimpleReactiveJpaRepository<T, ID> instance = new SimpleReactiveJpaRepository<>();
-  //    //        new InternalRepository<>(entityInformation, sessionFactory /*, classLoader*/);
-  //    //    ProxyFactory proxyFactory = new ProxyFactory(instance);
-  //
-  //    //    return (ReactiveJpaRepositoryImplementation<T, ID>)
-  // proxyFactory.getProxy(classLoader);
-  //    return instance;
-  //  }
-
   @Override
   public <S extends T> Flux<S> findAll() {
     return SessionContextHolder.currentSession()
@@ -117,33 +104,11 @@ public class SimpleReactiveJpaRepository<T, ID>
   @Override
   public <S extends T> Mono<S> save(S entity) {
     return entityOperations.persist(entity);
-    //    return SessionContextHolder.currentSession()
-    //        .flatMap(
-    //            session ->
-    //                Mono.defer(
-    //                    () ->
-    //                        Mono.fromCompletionStage(session.persist(entity))
-    //                            .then(deferFlushing(session))
-    //                            .thenReturn(entity)));
   }
 
   @Override
   public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
     return entityOperations.persist(entities);
-    //    if (IterableUtils.isEmpty(entities)) {
-    //      return Flux.empty();
-    //    }
-    //
-    //    return SessionContextHolder.currentSession()
-    //        .flatMap(
-    //            session ->
-    //                Mono.defer(
-    //                    () ->
-    //                        Mono.fromCompletionStage(
-    //                                session.persist(IterableUtils.toList(entities).toArray()))
-    //                            .then(deferFlushing(session))
-    //                            .then(Mono.just(entities))))
-    //        .flatMapMany(Flux::fromIterable);
   }
 
   @Override
@@ -534,13 +499,12 @@ public class SimpleReactiveJpaRepository<T, ID>
 
   private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadataForCount(
       Stage.SelectionQuery<S> query) {
-
     // TODO
-    //    if (metadata == null) {
-    //      return query;
-    //    }
-    //
-    //    applyQueryHintsForCount(query);
+    /*if (metadata == null) {
+      return query;
+    }
+
+    applyQueryHintsForCount(query);*/
 
     return query;
   }
@@ -548,13 +512,6 @@ public class SimpleReactiveJpaRepository<T, ID>
   private static Mono<Long> executeCountQuery(Stage.SelectionQuery<Long> query) {
     return Mono.defer(() -> Mono.fromCompletionStage(query.getResultList()))
         .map(l -> l.stream().reduce(0L, Long::sum));
-    //    long total = 0L;
-    //
-    //    for (Long element : totals) {
-    //      total += element == null ? 0 : element;
-    //    }
-    //
-    //    return total;
   }
 
   private <S> Stage.SelectionQuery<S> applyRepositoryMethodMetadata(

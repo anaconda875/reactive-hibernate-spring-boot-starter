@@ -87,7 +87,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
   @SuppressWarnings("unchecked")
   public Mono<Stage.AbstractQuery> doCreateCountQuery(
       Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
-    return /*(Stage.SelectionQuery<Long>) */ countQuery.createQuery(session, accessor);
+    return countQuery.createQuery(session, accessor);
   }
 
   @Override
@@ -182,9 +182,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
     public Mono<Stage.AbstractQuery> createQuery(
         Mono<Stage.Session> session, ReactiveJpaParametersParameterAccessor accessor) {
-      //      C criteriaQuery = cachedCriteria;
-      //      ParameterBinder parameterBinder = cachedParameterBinder;
-
       return Mono.just(accessor)
           .zipWhen(
               a -> {
@@ -221,18 +218,6 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
                     .map(query -> restrictMaxResultsIfNecessary(query, scrollPosition));
               });
 
-      //      if (cachedCriteria == null || accessor.hasBindableNullValue()) {
-      //        AbstractQueryCreator<C, ?> creator = createCreator(accessor);
-      //        criteriaQuery = creator.createQuery(getDynamicSort(accessor));
-      //        List<ParameterMetadataProvider.ParameterMetadata<?>> expressions =
-      //            creator.getParameterExpressions();
-      //        parameterBinder = getBinder(expressions);
-      //      }
-      //
-      //      if (parameterBinder == null) {
-      //        throw new IllegalStateException("ParameterBinder is null");
-      //      }
-      //
       //      // TODO
       //      Stage.AbstractQuery query = createQuery(session, criteriaQuery);
       //
@@ -317,8 +302,8 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
     private Sort getDynamicSort(JpaParametersParameterAccessor accessor) {
 
-      return parameters.potentiallySortsDynamically() //
-          ? accessor.getSort() //
+      return parameters.potentiallySortsDynamically()
+          ? accessor.getSort()
           : Sort.unsorted();
     }
   }

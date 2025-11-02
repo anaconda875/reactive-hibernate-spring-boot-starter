@@ -24,7 +24,7 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
   public static ReactiveJpaQueryEnhancer forJpql(DeclaredQuery query) throws Exception {
     Assert.notNull(query, "DeclaredQuery must not be null!");
 
-    Class<?> clazz = Class.forName("org.springframework.data.jpa.repository.query.JpqlQueryParser");
+    Class<?> clazz = Class.forName("org.springframework.data.jpa.repository.query.JpaQueryEnhancer$JpqlQueryParser");
     Constructor<?> constructor = ReflectionUtils.accessibleConstructor(clazz, String.class);
     return new ReactiveJpaQueryEnhancer(query, constructor.newInstance(query.getQueryString()));
   }
@@ -32,17 +32,10 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
   public static ReactiveJpaQueryEnhancer forHql(DeclaredQuery query) throws Exception {
     Assert.notNull(query, "DeclaredQuery must not be null!");
 
-    Class<?> clazz = Class.forName("org.springframework.data.jpa.repository.query.HqlQueryParser");
+    Class<?> clazz = Class.forName("org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser");
     Constructor<?> constructor = ReflectionUtils.accessibleConstructor(clazz, String.class);
     return new ReactiveJpaQueryEnhancer(query, constructor.newInstance(query.getQueryString()));
   }
-
-  /*public static ReactiveJpaQueryEnhancer forEql(DeclaredQuery query) {
-
-    Assert.notNull(query, "DeclaredQuery must not be null!");
-
-    return new ReactiveJpaQueryEnhancer(query, new EqlQueryParser(query.getQueryString()));
-  }*/
 
   protected Object getQueryParsingStrategy() {
     return queryParser;
@@ -50,7 +43,7 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
 
   @Override
   public String applySorting(Sort sort) {
-    return invokeQueryParser("renderSortedQuery", new Class[] {Sort.class}, sort);
+    return invokeQueryParser("applySorting", new Class[] {Sort.class}, sort);
   }
 
   private <T> T invokeQueryParser(
@@ -81,14 +74,7 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
 
   @Override
   public String detectAlias() {
-    return invokeQueryParser("findAlias", null);
-    //    try {
-    //      Method method = ReflectionUtils.findMethod(queryParser.getClass(), "findAlias");
-    //      ReflectionUtils.makeAccessible(method);
-    //      return (String) method.invoke(queryParser);
-    //    } catch (Exception e) {
-    //      throw new RuntimeException(e.getMessage(), e);
-    //    }
+    return invokeQueryParser("detectAlias", null);
   }
 
   @Override
@@ -98,7 +84,7 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
 
   @Override
   public String createCountQueryFor(@Nullable String countProjection) {
-    return invokeQueryParser("createCountQuery", new Class[] {String.class}, countProjection);
+    return invokeQueryParser("createCountQueryFor", new Class[] {String.class}, countProjection);
   }
 
   @Override
@@ -108,7 +94,7 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
 
   @Override
   public String getProjection() {
-    return invokeQueryParser("projection", null);
+    return invokeQueryParser("getProjection", null);
   }
 
   @Override

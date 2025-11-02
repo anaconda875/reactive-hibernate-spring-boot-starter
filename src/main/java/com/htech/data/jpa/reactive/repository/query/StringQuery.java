@@ -10,17 +10,23 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.springframework.data.expression.ValueExpression;
+import org.springframework.data.expression.ValueExpressionParser;
 import org.springframework.data.repository.query.SpelQueryContext;
+import org.springframework.data.repository.query.ValueExpressionQueryRewriter;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.lang.Nullable;
 import org.springframework.util.*;
 
+/**
+ * @author Bao.Ngo
+ */
 public class StringQuery implements DeclaredQuery {
 
   protected final String query;
   protected final List<ParameterBinding> bindings;
   protected final @Nullable String alias;
-  protected final boolean hasConstructorExpression;
   protected final boolean containsPageableInSpel;
   private final boolean usesJdbcStyleParameters;
   protected final boolean isNative;
@@ -44,7 +50,6 @@ public class StringQuery implements DeclaredQuery {
 
     this.queryEnhancer = QueryEnhancerFactory.forQuery(this);
     this.alias = this.queryEnhancer.detectAlias();
-    this.hasConstructorExpression = this.queryEnhancer.hasConstructorExpression();
   }
 
   boolean hasParameterBindings() {
@@ -64,10 +69,10 @@ public class StringQuery implements DeclaredQuery {
   public DeclaredQuery deriveCountQuery(
       @Nullable String countQuery, @Nullable String countQueryProjection) {
 
-    return DeclaredQuery.of( //
+    return DeclaredQuery.of(
         countQuery != null
             ? countQuery
-            : this.queryEnhancer.createCountQueryFor(countQueryProjection), //
+            : this.queryEnhancer.createCountQueryFor(countQueryProjection),
         this.isNative);
   }
 
@@ -84,7 +89,7 @@ public class StringQuery implements DeclaredQuery {
 
   @Override
   public boolean hasConstructorExpression() {
-    return hasConstructorExpression;
+    return queryEnhancer.hasConstructorExpression();
   }
 
   @Override
@@ -117,10 +122,10 @@ public class StringQuery implements DeclaredQuery {
 
     private static final String EXPRESSION_PARAMETER_PREFIX = "__$synthetic$__";
     public static final String POSITIONAL_OR_INDEXED_PARAMETER = "\\?(\\d*+(?![#\\w]))";
-    // .....................................................................^ not followed by a hash
-    // or a letter.
-    // .................................................................^ zero or more digits.
-    // .............................................................^ start with a question mark.
+     /*.....................................................................^ not followed by a hash
+     or a letter.
+     .................................................................^ zero or more digits.
+     .............................................................^ start with a question mark.*/
     private static final Pattern PARAMETER_BINDING_BY_INDEX =
         Pattern.compile(POSITIONAL_OR_INDEXED_PARAMETER);
     private static final Pattern PARAMETER_BINDING_PATTERN;
@@ -185,14 +190,15 @@ public class StringQuery implements DeclaredQuery {
         greatestParameterIndex = 0;
       }
 
-      SpelQueryContext.SpelExtractor spelExtractor =
-          createSpelExtractor(query, parametersShouldBeAccessedByIndex, greatestParameterIndex);
+      ValueExpressionQueryRewriter.ParsedQuery parsedQuery = createSpelExtractor(query,
+          parametersShouldBeAccessedByIndex,
+          greatestParameterIndex);
 
-      String resultingQuery = spelExtractor.getQueryString();
+      String resultingQuery = parsedQuery.getQueryString();
       Matcher matcher = PARAMETER_BINDING_PATTERN.matcher(resultingQuery);
 
       int expressionParameterIndex = parametersShouldBeAccessedByIndex ? greatestParameterIndex : 0;
-      int syntheticParameterIndex = expressionParameterIndex + spelExtractor.size();
+      int syntheticParameterIndex = expressionParameterIndex + parsedQuery.size();
 
       StringQuery.ParameterBindings parameterBindings =
           new StringQuery.ParameterBindings(
@@ -203,7 +209,7 @@ public class StringQuery implements DeclaredQuery {
 
       while (matcher.find()) {
 
-        if (spelExtractor.isQuoted(matcher.start())) {
+        if (parsedQuery.isQuoted(matcher.start())) {
           continue;
         }
 
@@ -232,10 +238,11 @@ public class StringQuery implements DeclaredQuery {
             () ->
                 String.format(
                     "We need either a name or an index; Offending query string: %s", query));
-        String expression =
-            spelExtractor.getParameter(
-                parameterName == null ? parameterIndexString : parameterName);
-        String replacement = null;
+
+        ValueExpression expression = parsedQuery
+            .getParameter(parameterName == null ? parameterIndexString : parameterName);
+
+        String replacement;
 
         expressionParameterIndex++;
         if ("".equals(parameterIndexString)) {
@@ -307,7 +314,7 @@ public class StringQuery implements DeclaredQuery {
       return resultingQuery;
     }
 
-    private static SpelQueryContext.SpelExtractor createSpelExtractor(
+    private static ValueExpressionQueryRewriter.ParsedQuery createSpelExtractor(
         String queryWithSpel,
         boolean parametersShouldBeAccessedByIndex,
         int greatestParameterIndex) {
@@ -318,18 +325,17 @@ public class StringQuery implements DeclaredQuery {
        */
       int expressionParameterIndex = parametersShouldBeAccessedByIndex ? greatestParameterIndex : 0;
 
-      BiFunction<Integer, String, String> indexToParameterName =
-          parametersShouldBeAccessedByIndex
-              ? (index, expression) -> String.valueOf(index + expressionParameterIndex + 1)
-              : (index, expression) -> EXPRESSION_PARAMETER_PREFIX + (index + 1);
+      BiFunction<Integer, String, String> indexToParameterName = parametersShouldBeAccessedByIndex
+          ? (index, expression) -> String.valueOf(index + expressionParameterIndex + 1)
+          : (index, expression) -> EXPRESSION_PARAMETER_PREFIX + (index + 1);
 
       String fixedPrefix = parametersShouldBeAccessedByIndex ? "?" : ":";
 
-      BiFunction<String, String, String> parameterNameToReplacement =
-          (prefix, name) -> fixedPrefix + name;
+      BiFunction<String, String, String> parameterNameToReplacement = (prefix, name) -> fixedPrefix + name;
+      ValueExpressionQueryRewriter rewriter = ValueExpressionQueryRewriter.of(ValueExpressionParser.create(),
+          indexToParameterName, parameterNameToReplacement);
 
-      return SpelQueryContext.of(indexToParameterName, parameterNameToReplacement)
-          .parse(queryWithSpel);
+      return rewriter.parse(queryWithSpel);
     }
 
     @Nullable
@@ -361,8 +367,8 @@ public class StringQuery implements DeclaredQuery {
     private static void checkAndRegister(
         ParameterBinding binding, List<ParameterBinding> bindings) {
 
-      bindings.stream() //
-          .filter(it -> it.bindsTo(binding)) //
+      bindings.stream()
+          .filter(it -> it.bindsTo(binding))
           .forEach(it -> Assert.isTrue(it.equals(binding), String.format(MESSAGE, it, binding)));
 
       if (!bindings.contains(binding)) {

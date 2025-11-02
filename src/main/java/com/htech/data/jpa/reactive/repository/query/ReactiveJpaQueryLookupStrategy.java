@@ -17,6 +17,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class ReactiveJpaQueryLookupStrategy {
 
   private static final Log LOG = LogFactory.getLog(ReactiveJpaQueryLookupStrategy.class);
@@ -24,55 +27,26 @@ public class ReactiveJpaQueryLookupStrategy {
   private static final RepositoryQuery NO_QUERY = new ReactiveJpaQueryLookupStrategy.NoQuery();
 
   public static QueryLookupStrategy create(
-      EntityManagerFactory entityManagerFactory,
+      EntityManagerFactory emf,
       Stage.SessionFactory sessionFactory,
       ReactiveJpaQueryMethodFactory queryMethodFactory,
       @Nullable QueryLookupStrategy.Key key,
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
+      ValueExpressionDelegate delegate,
       ReactiveQueryRewriterProvider queryRewriterProvider,
       EscapeCharacter escape) {
 
-    Assert.notNull(sessionFactory, "EntityManager must not be null");
-    Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null");
+    Assert.notNull(emf, "EntityManager must not be null");
+    Assert.notNull(delegate, "ValueExpressionDelegate must not be null");
 
-    switch (key != null ? key : QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND) {
-      case CREATE:
-        return new CreateQueryLookupStrategy(
-            entityManagerFactory,
-            sessionFactory,
-            queryMethodFactory,
-            evaluationContextProvider,
-            queryRewriterProvider,
-            escape);
-      case USE_DECLARED_QUERY:
-        return new DeclaredQueryLookupStrategy(
-            entityManagerFactory,
-            sessionFactory,
-            queryMethodFactory,
-            evaluationContextProvider,
-            queryRewriterProvider);
-      case CREATE_IF_NOT_FOUND:
-        return new CreateIfNotFoundQueryLookupStrategy(
-            sessionFactory,
-            queryMethodFactory,
-            new CreateQueryLookupStrategy(
-                entityManagerFactory,
-                sessionFactory,
-                queryMethodFactory,
-                evaluationContextProvider,
-                queryRewriterProvider,
-                escape),
-            new DeclaredQueryLookupStrategy(
-                entityManagerFactory,
-                sessionFactory,
-                queryMethodFactory,
-                evaluationContextProvider,
-                queryRewriterProvider),
-            queryRewriterProvider);
-      default:
-        throw new IllegalArgumentException(
-            String.format("Unsupported query lookup strategy %s", key));
-    }
+    return switch (key != null ? key : QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND) {
+      case CREATE -> new CreateQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider, escape);
+      case USE_DECLARED_QUERY ->
+          new DeclaredQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider);
+      case CREATE_IF_NOT_FOUND -> new CreateIfNotFoundQueryLookupStrategy(sessionFactory, queryMethodFactory,
+          new CreateQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider, escape),
+          new DeclaredQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider),
+          queryRewriterProvider);
+    };
   }
 
   abstract static class AbstractQueryLookupStrategy implements QueryLookupStrategy {
@@ -117,20 +91,20 @@ public class ReactiveJpaQueryLookupStrategy {
   static class CreateQueryLookupStrategy extends AbstractQueryLookupStrategy {
 
     protected final EntityManagerFactory entityManagerFactory;
-    protected final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
+    private final ValueExpressionDelegate delegate;
     protected final EscapeCharacter escape;
 
     public CreateQueryLookupStrategy(
         EntityManagerFactory entityManagerFactory,
         Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
-        ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
+        ValueExpressionDelegate delegate,
         ReactiveQueryRewriterProvider queryRewriterProvider,
         EscapeCharacter escape) {
 
       super(sessionFactory, queryMethodFactory, queryRewriterProvider);
       this.entityManagerFactory = entityManagerFactory;
-      this.evaluationContextProvider = evaluationContextProvider;
+      this.delegate = delegate;
       this.escape = escape;
     }
 
@@ -147,18 +121,17 @@ public class ReactiveJpaQueryLookupStrategy {
   static class DeclaredQueryLookupStrategy extends AbstractQueryLookupStrategy {
 
     private final EntityManagerFactory entityManagerFactory;
-    private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
-
+    private final ValueExpressionDelegate delegate;
     public DeclaredQueryLookupStrategy(
         EntityManagerFactory entityManagerFactory,
         Stage.SessionFactory sessionFactory,
         ReactiveJpaQueryMethodFactory queryMethodFactory,
-        ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
+        ValueExpressionDelegate delegate,
         ReactiveQueryRewriterProvider queryRewriterProvider) {
 
       super(sessionFactory, queryMethodFactory, queryRewriterProvider);
       this.entityManagerFactory = entityManagerFactory;
-      this.evaluationContextProvider = evaluationContextProvider;
+      this.delegate = delegate;
     }
 
     @Override
@@ -187,7 +160,7 @@ public class ReactiveJpaQueryLookupStrategy {
             method.getRequiredAnnotatedQuery(),
             getCountQuery(method, namedQueries, entityManagerFactory, sessionFactory),
             queryRewriter,
-            evaluationContextProvider);
+            delegate);
       }
 
       String name = method.getNamedQueryName();
@@ -198,13 +171,13 @@ public class ReactiveJpaQueryLookupStrategy {
             namedQueries.getQuery(name),
             getCountQuery(method, namedQueries, entityManagerFactory, sessionFactory),
             queryRewriter,
-            evaluationContextProvider);
+            delegate);
       }
 
       RepositoryQuery query = NamedQuery.lookupFrom(method, sessionFactory, entityManagerFactory);
 
-      return query != null //
-          ? query //
+      return query != null
+          ? query
           : NO_QUERY;
     }
 

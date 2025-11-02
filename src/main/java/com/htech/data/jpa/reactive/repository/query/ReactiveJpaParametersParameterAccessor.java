@@ -41,13 +41,6 @@ public class ReactiveJpaParametersParameterAccessor extends JpaParametersParamet
     return sessionFactory;
   }
 
-  //  public Mono<Stage.Session> getSession() {
-  //    return session;
-  //  }
-
-  //  public Stage.Transaction getTransaction() {
-  //    return transaction;
-  //  }
   @SuppressWarnings("unchecked")
   public Mono<ReactiveJpaParametersParameterAccessor> resolveParameters() {
 

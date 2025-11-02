@@ -2,12 +2,11 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import jakarta.persistence.TemporalType;
 import java.util.List;
+
+import org.springframework.data.expression.*;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
-import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -15,6 +14,12 @@ import org.springframework.util.Assert;
  * @author Bao.Ngo
  */
 public abstract class QueryParameterSetterFactory {
+
+  static QueryParameterSetterFactory parsing(
+      ValueExpressionParser parser,
+      ReactiveValueEvaluationContextProvider valueExpressionContextProvider) {
+    return new QueryParameterSetterFactory.ExpressionBasedQueryParameterSetterFactory(parser, valueExpressionContextProvider);
+  }
 
   @Nullable
   abstract QueryParameterSetter create(ParameterBinding binding, DeclaredQuery declaredQuery);
@@ -36,33 +41,19 @@ public abstract class QueryParameterSetterFactory {
         parameters, metadata);
   }
 
-  static QueryParameterSetterFactory parsing(
-      SpelExpressionParser parser,
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
-      Parameters<?, ?> parameters) {
-    Assert.notNull(parser, "SpelExpressionParser must not be null");
-    Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null");
-    Assert.notNull(parameters, "Parameters must not be null");
-
-    return new QueryParameterSetterFactory.ExpressionBasedQueryParameterSetterFactory(
-        parser, evaluationContextProvider, parameters);
-  }
-
   private static QueryParameterSetter createSetter(
       ParameterValueEvaluator valueEvaluator,
-      //      Function<JpaParametersParameterAccessor, Mono<Object>> valueExtractor,
       ParameterBinding binding,
       @Nullable ReactiveJpaParameters.JpaParameter parameter) {
 
     TemporalType temporalType =
-        parameter != null && parameter.isTemporalParameter() //
-            ? parameter.getRequiredTemporalType() //
+        parameter != null && parameter.isTemporalParameter()
+            ? parameter.getRequiredTemporalType()
             : null;
 
     return new QueryParameterSetter.NamedOrIndexedQueryParameterSetter(
         valueEvaluator,
         binding,
-        //        valueExtractor.andThen(binding::prepare),
         QueryParameterSetterFactory.ParameterImpl.of(parameter, binding),
         temporalType);
   }
@@ -93,14 +84,14 @@ public abstract class QueryParameterSetterFactory {
       int parameterIndex) {
     ReactiveJpaParameters bindableParameters = parameters.getBindableParameters();
 
-    Assert.isTrue( //
-        parameterIndex < bindableParameters.getNumberOfParameters(), //
+    Assert.isTrue(
+        parameterIndex < bindableParameters.getNumberOfParameters(),
         () ->
-            String.format( //
-                "At least %s parameter(s) provided but only %s parameter(s) present in query", //
-                parameterIndex + 1, //
-                bindableParameters.getNumberOfParameters() //
-                ) //
+            String.format(
+                "At least %s parameter(s) provided but only %s parameter(s) present in query",
+                parameterIndex + 1,
+                bindableParameters.getNumberOfParameters()
+                )
         );
 
     return bindableParameters.getParameter(parameterIndex);
@@ -109,21 +100,13 @@ public abstract class QueryParameterSetterFactory {
   private static class ExpressionBasedQueryParameterSetterFactory
       extends QueryParameterSetterFactory {
 
-    private final SpelExpressionParser parser;
-    private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
-    private final Parameters<?, ?> parameters;
+    private final ValueExpressionParser parser;
+    private final ReactiveValueEvaluationContextProvider evaluationContextProvider;
 
-    ExpressionBasedQueryParameterSetterFactory(
-        SpelExpressionParser parser,
-        ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
-        Parameters<?, ?> parameters) {
-      Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null");
-      Assert.notNull(parser, "SpelExpressionParser must not be null");
-      Assert.notNull(parameters, "Parameters must not be null");
-
-      this.evaluationContextProvider = evaluationContextProvider;
+    public ExpressionBasedQueryParameterSetterFactory(
+        ValueExpressionParser parser, ReactiveValueEvaluationContextProvider evaluationContextProvider) {
       this.parser = parser;
-      this.parameters = parameters;
+      this.evaluationContextProvider = evaluationContextProvider;
     }
 
     @Nullable
@@ -133,52 +116,13 @@ public abstract class QueryParameterSetterFactory {
         return null;
       }
 
-      Expression expression = parser.parseExpression(e.expression());
-
-      return QueryParameterSetterFactory.createSetter(
-          new SpELParameterValueEvaluator(evaluationContextProvider, parameters, expression),
-          binding,
-          null);
-      //
-      //      return createSetter(values -> evaluateExpression(expression, values), binding, null);
-
-      //      if (!(binding.getOrigin() instanceof ParameterBinding.Expression e)) {
-      //        return Mono.empty();
-      //      }
-      //
-      //      return Mono.just(e.expression()).map(parser::parseExpression)
-      //          .map(expression -> QueryParameterSetterFactory
-      //              .createSetter(new SpELParameterValueEvaluator(evaluationContextProvider,
-      // parameters, expression), binding, null));
-
-      //      Function<JpaParametersParameterAccessor, Mono<Object>>[] valueExtractor = new
-      // Function[1];
-      //      return Mono.just(e.expression()).map(parser::parseExpression)
-      //          .flatMap(expression -> {
-      //            return Mono.<Mono<Object>>create(sink -> {
-      //              valueExtractor[0] = value -> {
-      //                Mono<Object> mono = evaluateExpression(expression, value);
-      //                sink.success(mono);
-      //                return mono;
-      //              };
-      //            }).flatMap(Function.identity())
-      //              .map(param -> QueryParameterSetterFactory.createSetter(valueExtractor[0],
-      // binding, null));
-      ////            QueryParameterSetterFactory.createSetter(value ->
-      // evaluateExpression(expression, value), binding, null);
-      //          });
+      return createSetter(new SpELParameterValueEvaluator(e.expression(), evaluationContextProvider), binding, null);
     }
 
-    //    private Mono<Object> evaluateExpression(
-    //        Expression expression, JpaParametersParameterAccessor accessor) {
-    ////      EvaluationContext context =
-    ////          evaluationContextProvider.getEvaluationContext(parameters, accessor.getValues());
-    ////
-    ////      return expression.getValue(context, Object.class);
-    //      return evaluationContextProvider.getEvaluationContextLater(parameters,
-    // accessor.getValues())
-    //          .map(context -> expression.getValue(context, Object.class));
-    //    }
+    private Object evaluateExpression(ValueExpression expression, JpaParametersParameterAccessor accessor) {
+      ValueEvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(accessor.getValues());
+      return expression.evaluate(evaluationContext);
+    }
   }
 
   private static class BasicQueryParameterSetterFactory extends QueryParameterSetterFactory {
@@ -208,8 +152,8 @@ public abstract class QueryParameterSetterFactory {
         parameter = findParameterForBinding(parameters, identifier.getPosition() - 1);
       }
 
-      return parameter == null //
-          ? QueryParameterSetter.NOOP //
+      return parameter == null
+          ? QueryParameterSetter.NOOP
           : createSetter(new BasicParameterValueEvaluator(parameter), binding, parameter);
     }
 
@@ -239,14 +183,14 @@ public abstract class QueryParameterSetterFactory {
     public QueryParameterSetter create(ParameterBinding binding, DeclaredQuery declaredQuery) {
       int parameterIndex = binding.getRequiredPosition() - 1;
 
-      Assert.isTrue( //
-          parameterIndex < parameterMetadata.size(), //
+      Assert.isTrue(
+          parameterIndex < parameterMetadata.size(),
           () ->
-              String.format( //
-                  "At least %s parameter(s) provided but only %s parameter(s) present in query", //
-                  binding.getRequiredPosition(), //
-                  parameterMetadata.size() //
-                  ) //
+              String.format(
+                  "At least %s parameter(s) provided but only %s parameter(s) present in query",
+                  binding.getRequiredPosition(),
+                  parameterMetadata.size()
+                  )
           );
 
       ParameterMetadataProvider.ParameterMetadata<?> metadata =

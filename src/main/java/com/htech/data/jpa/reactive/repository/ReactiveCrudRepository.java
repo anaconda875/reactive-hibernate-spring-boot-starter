@@ -14,7 +14,6 @@ import reactor.core.publisher.Mono;
 public interface ReactiveCrudRepository<T, ID> extends Repository<T, ID> {
   <S extends T> Flux<S> findAll();
 
-  //  Uni<T> findById(ID id);
   <S extends T> Mono<S> findById(ID id);
 
   Mono<T> getReferenceById(ID id);

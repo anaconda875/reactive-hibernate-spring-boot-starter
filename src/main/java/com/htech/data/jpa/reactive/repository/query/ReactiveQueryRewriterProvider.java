@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.QueryRewriter;
 public interface ReactiveQueryRewriterProvider {
 
   static ReactiveQueryRewriterProvider simple() {
-
     return method -> {
       Class<? extends QueryRewriter> queryRewriter = method.getQueryRewriter();
 

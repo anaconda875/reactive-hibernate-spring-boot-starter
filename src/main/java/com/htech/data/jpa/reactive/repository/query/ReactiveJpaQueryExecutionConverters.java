@@ -38,28 +38,26 @@ public class ReactiveJpaQueryExecutionConverters {
     CONVERSION_SERVICE.addConverter(new ReactiveFlatteningConverter());
     WRAPPER_TYPES.add(WrapperType.singleValue(Mono.class));
     WRAPPER_TYPES.add(WrapperType.singleValue(Uni.class));
-    //
+
     // WRAPPER_TYPES.add(QueryExecutionConverters.WrapperType.singleValue(CompletableFuture.class));
 
     UN_WRAPPER_TYPES.add(WrapperType.multiValue(Flux.class));
     UN_WRAPPER_TYPES.add(WrapperType.multiValue(Uni.class));
-    //
+
     // UNWRAPPER_TYPES.add(QueryExecutionConverters.WrapperType.singleValue(CompletableFuture.class));
 
-    //    ALLOWED_PAGEABLE_TYPES.add(Slice.class);
-    //    ALLOWED_PAGEABLE_TYPES.add(Page.class);
-    //    ALLOWED_PAGEABLE_TYPES.add(List.class);
-    //    ALLOWED_PAGEABLE_TYPES.add(Window.class);
+    /*ALLOWED_PAGEABLE_TYPES.add(Slice.class);
+    ALLOWED_PAGEABLE_TYPES.add(Page.class);
+    ALLOWED_PAGEABLE_TYPES.add(List.class);
+    ALLOWED_PAGEABLE_TYPES.add(Window.class);
 
-    //
-    // WRAPPER_TYPES.add(QueryExecutionConverters.NullableWrapperToCompletableFutureConverter.getWrapperType());
+    WRAPPER_TYPES.add(QueryExecutionConverters.NullableWrapperToCompletableFutureConverter.getWrapperType());
 
-    //    UNWRAPPERS.addAll(CustomCollections.getUnwrappers());
+    UNWRAPPERS.addAll(CustomCollections.getUnwrappers());
 
-    //
-    // CustomCollections.getCustomTypes().stream().map(QueryExecutionConverters.WrapperType::multiValue).forEach(WRAPPER_TYPES::add);
+    CustomCollections.getCustomTypes().stream().map(QueryExecutionConverters.WrapperType::multiValue).forEach(WRAPPER_TYPES::add);
 
-    //    ALLOWED_PAGEABLE_TYPES.addAll(CustomCollections.getPaginationReturnTypes());
+    ALLOWED_PAGEABLE_TYPES.addAll(CustomCollections.getPaginationReturnTypes());*/
 
   }
 
@@ -83,10 +81,6 @@ public class ReactiveJpaQueryExecutionConverters {
   }
 
   public static boolean isSingleValue(Class<?> type) {
-    //    if (NullableWrapperConverters.supports(type)) {
-    //      return NullableWrapperConverters.isSingleValue(type);
-    //    }
-
     for (WrapperType candidate : WRAPPER_TYPES) {
       if (candidate.getType().isAssignableFrom(type)) {
         return candidate.isSingleValue();
@@ -219,8 +213,4 @@ public class ReactiveJpaQueryExecutionConverters {
       return source;
     }
   }
-
-  //  static class UniFlatteningConverter extends ReactiveFlatteningConverter<Uni> {
-  //
-  //  }
 }

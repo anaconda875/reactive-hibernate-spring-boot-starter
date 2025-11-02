@@ -55,8 +55,8 @@ public class ReactiveJpaCriteriaQueryCreator
       CriteriaBuilder builder, ReturnedType type) {
     Class<?> typeToRead = tree.isDelete() ? type.getDomainType() : type.getTypeToRead();
 
-    return (typeToRead == null) || tree.isExistsProjection() //
-        ? builder.createTupleQuery() //
+    return (typeToRead == null) || tree.isExistsProjection()
+        ? builder.createTupleQuery()
         : builder.createQuery(typeToRead);
   }
 
@@ -102,12 +102,12 @@ public class ReactiveJpaCriteriaQueryCreator
 
       Class<?> typeToRead = returnedType.getReturnedType();
       query =
-          typeToRead.isInterface() //
-              ? query.multiselect(selections) //
+          typeToRead.isInterface()
+              ? query.multiselect(selections)
               : query.select(
                   (Selection)
                       builder.construct(
-                          typeToRead, //
+                          typeToRead,
                           selections.toArray(new Selection[0])));
 
     } else if (tree.isExistsProjection()) {
@@ -119,7 +119,7 @@ public class ReactiveJpaCriteriaQueryCreator
       } else {
         query =
             query.multiselect(
-                root.getModel().getIdClassAttributes().stream() //
+                root.getModel().getIdClassAttributes().stream()
                     .map(it -> (Selection<?>) root.get((SingularAttribute) it).alias(it.getName()))
                     .collect(Collectors.toList()));
       }

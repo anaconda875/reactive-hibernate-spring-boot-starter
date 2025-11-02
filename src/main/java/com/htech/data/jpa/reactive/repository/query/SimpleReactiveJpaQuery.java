@@ -4,6 +4,7 @@ import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 
@@ -14,16 +15,15 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       Stage.SessionFactory sessionFactory,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      ReactiveExtensionAwareQueryMethodEvaluationContextProvider evaluationContextProvider,
-      SpelExpressionParser parser) {
+//      ReactiveExtensionAwareQueryMethodEvaluationContextProvider evaluationContextProvider,
+      ValueExpressionDelegate delegate) {
     this(
         method,
         sessionFactory,
         method.getRequiredAnnotatedQuery(),
         countQueryString,
         queryRewriter,
-        evaluationContextProvider,
-        parser);
+        delegate);
   }
 
   public SimpleReactiveJpaQuery(
@@ -32,8 +32,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       String queryString,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-      ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider,
-      SpelExpressionParser parser) {
+      ValueExpressionDelegate delegate) {
 
     super(
         method,
@@ -41,8 +40,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
         queryString,
         countQueryString,
         queryRewriter,
-        evaluationContextProvider,
-        parser);
+        delegate);
 
     // TODO
     //    validateQuery(getQuery().getQueryString(), "Validation failed for query for method %s",

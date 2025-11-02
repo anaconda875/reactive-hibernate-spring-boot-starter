@@ -7,6 +7,9 @@ import java.util.stream.IntStream;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Bao.Ngo
+ */
 public class StoredProcedureAttributes {
 
   static final String SYNTHETIC_OUTPUT_PARAMETER_NAME = "out";

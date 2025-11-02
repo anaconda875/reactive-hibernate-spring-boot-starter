@@ -6,12 +6,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.10</version>
+        <version>3.4.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>io.github.anaconda875</groupId>
     <artifactId>reactive-hibernate-spring-boot-starter</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.7</version>
     <name>Spring Boot Starter for Reactive JPA</name>
     <description>Integrate Reactive Hibernate to Spring Data with Auto-config</description>
 
@@ -41,8 +41,8 @@
     <properties>
         <java.version>17</java.version>
 
-        <hibernate-reactive.version>2.3.1.Final</hibernate-reactive.version>
-        <hibernate.version>6.5.3.Final</hibernate.version>
+        <hibernate-reactive.version>2.4.3.Final</hibernate-reactive.version>
+        <hibernate.version>6.6.2.Final</hibernate.version>
 
         <!-- maven plugins -->
         <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
@@ -105,7 +105,6 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
-                            <tokenAuth>true</tokenAuth>
                         </configuration>
                     </plugin>
                     <plugin>

@@ -57,6 +57,9 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   private final Lazy<JpaEntityMetadata<?>> entityMetadata;
   private final Map<Class<? extends Annotation>, Optional<Annotation>> annotationCache;
 
+  //TODO
+//  private final Lazy<Optional<org.springframework.data.jpa.repository.Meta>> metaAnnotation;
+
   protected ReactiveJpaQueryMethod(
       Method method,
       RepositoryMetadata metadata,
@@ -76,8 +79,8 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
             () ->
                 (LockModeType)
                     Optional.ofNullable(
-                            AnnotatedElementUtils.findMergedAnnotation(method, Lock.class)) //
-                        .map(AnnotationUtils::getValue) //
+                            AnnotatedElementUtils.findMergedAnnotation(method, Lock.class))
+                        .map(AnnotationUtils::getValue)
                         .orElse(null));
 
     this.queryHints =
@@ -110,7 +113,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     Assert.isTrue(
         !(isModifyingQuery() && getParameters().hasSpecialParameter()),
         String.format("Modifying method must not contain %s", Parameters.TYPES));
-    assertParameterNamesInAnnotatedQuery();
   }
 
   private Boolean isCollectionQueryInternal() {
@@ -131,29 +133,6 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
     }
 
     return returnType.getType();
-  }
-
-  private void assertParameterNamesInAnnotatedQuery() {
-    String annotatedQuery = getAnnotatedQuery();
-
-    if (!DeclaredQuery.of(annotatedQuery, this.isNativeQuery.get()).hasNamedParameter()) {
-      return;
-    }
-
-    for (Parameter parameter : getParameters()) {
-      if (!parameter.isNamedParameter()) {
-        continue;
-      }
-
-      if (!StringUtils.hasText(annotatedQuery)
-          || !annotatedQuery.contains(String.format(":%s", parameter.getName().get()))
-              && !annotatedQuery.contains(String.format("#%s", parameter.getName().get()))) {
-        throw new IllegalStateException(
-            String.format(
-                "Using named parameters for method %s but parameter '%s' not found in annotated query '%s'",
-                method, parameter.getName(), annotatedQuery));
-      }
-    }
   }
 
   @Override

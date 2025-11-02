@@ -27,21 +27,18 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
   protected final ReactiveJpaQueryMethod method;
   protected final Stage.SessionFactory sessionFactory;
   protected final JpaMetamodel metamodel;
-  //  private final PersistenceProvider provider;
   protected final Lazy<ReactiveJpaQueryExecution> execution;
 
   final Lazy<ParameterBinder> parameterBinder = Lazy.of(this::createBinder);
 
   public AbstractReactiveJpaQuery(
       ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory) {
-
     Assert.notNull(method, "R2dbcQueryMethod must not be null");
     Assert.notNull(sessionFactory, "EntityManager must not be null");
 
     this.method = method;
     this.sessionFactory = sessionFactory;
     this.metamodel = JpaMetamodel.of(sessionFactory.getMetamodel());
-    //    this.provider = PersistenceProvider.fromMetamodel().fr(em);
     this.execution =
         Lazy.of(
             () -> {
@@ -111,10 +108,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     // em);
     //    }
 
-    //    Stage.Session session = (Stage.Session) parameters[parameters.length - 2];
-    //    Stage.Transaction transaction = (Stage.Transaction) parameters[parameters.length - 1];
-    //    Object[] originalParams = Arrays.copyOfRange(parameters, 0, parameters.length - 2);
-
     return new ReactiveJpaParametersParameterAccessor(
             method, method.getParameters(), parameters, sessionFactory)
         .resolveParameters();
@@ -128,7 +121,7 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     }
 
     if (method.isModifyingQuery()) {
-      return new ReactiveJpaQueryExecution.ModifyingExecution(/*method, sessionFactory*/ );
+      return new ReactiveJpaQueryExecution.ModifyingExecution(/*method, sessionFactory*/);
     } else {
       return new ReactiveJpaQueryExecution.SingleEntityExecution();
     }
@@ -178,10 +171,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
                 applyLockMode(
                     applyEntityGraphConfiguration(applyHints(t.getT2(), method), t.getT1(), method),
                     method));
-    //    return applyLockMode(
-    //        applyEntityGraphConfiguration(
-    //            applyHints(doCreateQuery(parameters, method), method), method),
-    //        method);
   }
 
   private Stage.AbstractQuery applyEntityGraphConfiguration(
@@ -220,7 +209,6 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     //    Stage.AbstractQuery countQuery = doCreateCountQuery(values);
 
     return doCreateCountQuery(session, values);
-
     //    return method.applyHintsToCountQuery() ? applyHints(countQuery, method) : countQuery;
   }
 
