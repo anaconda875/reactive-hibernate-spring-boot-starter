@@ -17,16 +17,20 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.dao.support.PersistenceExceptionTranslationInterceptor;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.querydsl.EntityPathResolver;
 import org.springframework.data.querydsl.SimpleEntityPathResolver;
 import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.core.support.PersistenceExceptionTranslationRepositoryProxyPostProcessor;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
 import org.springframework.data.repository.core.support.TransactionalRepositoryFactoryBeanSupport;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
 import org.springframework.lang.Nullable;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -71,16 +75,44 @@ public class ReactiveJpaRepositoryFactoryBean<
     factory.addRepositoryProxyPostProcessor(new SessionAwareProxyPostProcessor());*/
     factory.addRepositoryProxyPostProcessor(new CrudMethodMetadataPostProcessor());
     factory.addRepositoryProxyPostProcessor(
+        new PersistenceExceptionHandlerPostProcessor(entityOperations.sessionFactory()));
+    factory.addRepositoryProxyPostProcessor(
         new SessionAwarePostProcessor(entityOperations.sessionFactory()));
     factory.addRepositoryProxyPostProcessor((f, repositoryInformation) -> {
       if (isTransactionNeeded(repositoryInformation.getRepositoryInterface())) {
         f.addAdvice(applicationContext.getBean(SurroundingTransactionDetectorMethodInterceptor.class));
       }
     });
-    factory.addRepositoryProxyPostProcessor(
-        new PersistenceExceptionHandlerPostProcessor(entityOperations.sessionFactory()));
+
+    addRepositoryFactoryCustomizer(this::reOrderPostProcessors);
 
     return factory;
+  }
+
+  private void reOrderPostProcessors(RepositoryFactorySupport fs) {
+    ReflectionUtils.doWithFields(
+        RepositoryFactorySupport.class,
+        field -> {
+          ReflectionUtils.makeAccessible(field);
+          List<RepositoryProxyPostProcessor> postProcessors =
+              (List<RepositoryProxyPostProcessor>) ReflectionUtils.getField(field, fs);
+          ListIterator<RepositoryProxyPostProcessor> listIterator = postProcessors.listIterator();
+          List<RepositoryProxyPostProcessor> processing = new LinkedList<>();
+          while (listIterator.hasNext()) {
+            RepositoryProxyPostProcessor pp = listIterator.next();
+            if (pp instanceof PersistenceExceptionTranslationRepositoryProxyPostProcessor
+              || pp.getClass().getName().equals("org.springframework.data.repository.core.support.TransactionalRepositoryProxyPostProcessor")) {
+              listIterator.remove();
+              if (processing.size() == 1 && processing.get(0) instanceof PersistenceExceptionTranslationRepositoryProxyPostProcessor) {
+                processing.add(0, pp);
+              } else {
+                processing.add(pp);
+              }
+            }
+          }
+          processing.forEach(pp -> postProcessors.add(2, pp));
+        },
+        field -> field.getName().equals("postProcessors") && field.getType() == List.class);
   }
 
   @Override

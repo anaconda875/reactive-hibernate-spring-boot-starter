@@ -32,6 +32,7 @@ import org.springframework.data.util.Optionals;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -39,6 +40,7 @@ import reactor.core.publisher.Mono;
  * @author Bao.Ngo
  */
 @SuppressWarnings("unchecked")
+@Transactional(readOnly = true)
 public class SimpleReactiveJpaRepository<T, ID>
     implements ReactiveJpaRepositoryImplementation<T, ID> {
 

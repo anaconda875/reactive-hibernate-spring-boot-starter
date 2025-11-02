@@ -39,7 +39,9 @@ public class PersistenceExceptionHandlerPostProcessor implements RepositoryProxy
       Object proceed = invocation.proceed();
       if (proceed instanceof Mono<?> mono) {
         return mono.onErrorResume(NoResultException.class, e -> Mono.empty());
-      } else if (proceed instanceof Flux<?> flux) {
+      }
+
+      if (proceed instanceof Flux<?> flux) {
         return flux.onErrorResume(NoResultException.class, e -> Mono.empty());
       }
 

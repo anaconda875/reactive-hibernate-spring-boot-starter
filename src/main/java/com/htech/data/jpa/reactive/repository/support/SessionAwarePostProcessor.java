@@ -42,21 +42,20 @@ public class SessionAwarePostProcessor implements RepositoryProxyPostProcessor {
     public Object invoke(MethodInvocation invocation) throws Throwable {
       Object proceed = invocation.proceed();
       Mono<Stage.Session> session = currentSession(sessionFactory);
-      Mono<Boolean> transactionAvailable = TransactionUtils.isTransactionAvailable(sessionFactory);
       if (proceed instanceof Mono<?> mono) {
         return Mono.usingWhen(
-            Mono.just("dummy"),
-            str -> mono.contextWrite(SessionContextHolder.set(session)),
-            str -> closeNormally(transactionAvailable, session),
-            (str, t) -> closeExceptionally(t, transactionAvailable, session),
-            str -> closeNormally(transactionAvailable, session));
+            TransactionUtils.isTransactionAvailable(sessionFactory),
+            transactionAvailable -> mono.contextWrite(SessionContextHolder.set(session)),
+            transactionAvailable -> closeNormally(transactionAvailable, session),
+            (transactionAvailable, t) -> closeExceptionally(t, transactionAvailable, session),
+            transactionAvailable -> closeNormally(transactionAvailable, session));
       } else if (proceed instanceof Flux<?> flux) {
         return Flux.usingWhen(
-            Mono.just("dummy"),
-            str -> flux.contextWrite(SessionContextHolder.set(session)),
-            str -> closeNormally(transactionAvailable, session),
-            (str, t) -> closeExceptionally(t, transactionAvailable, session),
-            str -> closeNormally(transactionAvailable, session));
+            TransactionUtils.isTransactionAvailable(sessionFactory),
+            transactionAvailable -> flux.contextWrite(SessionContextHolder.set(session)),
+            transactionAvailable -> closeNormally(transactionAvailable, session),
+            (transactionAvailable, t) -> closeExceptionally(t, transactionAvailable, session),
+            transactionAvailable -> closeNormally(transactionAvailable, session));
       }
 
       return proceed;
@@ -75,27 +74,23 @@ public class SessionAwarePostProcessor implements RepositoryProxyPostProcessor {
     }
 
     private static Mono<Object> closeExceptionally(
-        Throwable t, Mono<Boolean> transactionAvailable, Mono<Stage.Session> session) {
-      return transactionAvailable.flatMap(
-          b -> {
-            if (b) {
-              return Mono.error(t);
-            }
-            return session
-                .flatMap(s -> Mono.defer(() -> Mono.fromCompletionStage(s.close())))
-                .then(Mono.error(t));
-          });
+        Throwable t, Boolean transactionAvailable, Mono<Stage.Session> session) {
+      if (transactionAvailable) {
+        return Mono.error(t);
+      }
+
+      return session
+          .flatMap(s -> s.isOpen() ? Mono.defer(() -> Mono.fromCompletionStage(s.close())) : Mono.error(t))
+          .then(Mono.error(t));
     }
 
     private static Mono<Void> closeNormally(
-        Mono<Boolean> transactionAvailable, Mono<Stage.Session> session) {
-      return transactionAvailable.flatMap(
-          b -> {
-            if (b) {
-              return Mono.empty();
-            }
-            return session.flatMap(s -> Mono.defer(() -> Mono.fromCompletionStage(s.close())));
-          });
+        Boolean transactionAvailable, Mono<Stage.Session> session) {
+      if (transactionAvailable) {
+        return Mono.empty();
+      }
+
+      return session.flatMap(s -> s.isOpen() ? Mono.defer(() -> Mono.fromCompletionStage(s.close())) : Mono.empty());
     }
   }
 }
