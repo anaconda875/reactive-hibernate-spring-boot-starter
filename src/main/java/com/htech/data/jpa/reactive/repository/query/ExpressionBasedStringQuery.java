@@ -2,14 +2,10 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
-
 import org.springframework.data.expression.ValueEvaluationContext;
 import org.springframework.data.expression.ValueExpression;
 import org.springframework.data.expression.ValueExpressionParser;
 import org.springframework.data.jpa.repository.query.JpaEntityMetadata;
-import org.springframework.expression.Expression;
-import org.springframework.expression.ParserContext;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.util.Assert;
 
@@ -22,7 +18,8 @@ public class ExpressionBasedStringQuery extends StringQuery {
   private static final String QUOTED_EXPRESSION_PARAMETER = "$1__HASH__{";
 
   private static final Pattern EXPRESSION_PARAMETER_QUOTING = Pattern.compile("([:?])#\\{");
-  private static final Pattern EXPRESSION_PARAMETER_UNQUOTING = Pattern.compile("([:?])__HASH__\\{");
+  private static final Pattern EXPRESSION_PARAMETER_UNQUOTING =
+      Pattern.compile("([:?])__HASH__\\{");
 
   private static final String ENTITY_NAME = "entityName";
   private static final String ENTITY_NAME_VARIABLE = "#" + ENTITY_NAME;

@@ -121,7 +121,7 @@ public abstract class AbstractReactiveJpaQuery implements RepositoryQuery {
     }
 
     if (method.isModifyingQuery()) {
-      return new ReactiveJpaQueryExecution.ModifyingExecution(/*method, sessionFactory*/);
+      return new ReactiveJpaQueryExecution.ModifyingExecution(/*method, sessionFactory*/ );
     } else {
       return new ReactiveJpaQueryExecution.SingleEntityExecution();
     }

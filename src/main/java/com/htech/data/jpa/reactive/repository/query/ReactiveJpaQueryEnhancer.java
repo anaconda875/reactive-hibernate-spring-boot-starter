@@ -24,7 +24,9 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
   public static ReactiveJpaQueryEnhancer forJpql(DeclaredQuery query) throws Exception {
     Assert.notNull(query, "DeclaredQuery must not be null!");
 
-    Class<?> clazz = Class.forName("org.springframework.data.jpa.repository.query.JpaQueryEnhancer$JpqlQueryParser");
+    Class<?> clazz =
+        Class.forName(
+            "org.springframework.data.jpa.repository.query.JpaQueryEnhancer$JpqlQueryParser");
     Constructor<?> constructor = ReflectionUtils.accessibleConstructor(clazz, String.class);
     return new ReactiveJpaQueryEnhancer(query, constructor.newInstance(query.getQueryString()));
   }
@@ -32,7 +34,9 @@ public class ReactiveJpaQueryEnhancer implements QueryEnhancer {
   public static ReactiveJpaQueryEnhancer forHql(DeclaredQuery query) throws Exception {
     Assert.notNull(query, "DeclaredQuery must not be null!");
 
-    Class<?> clazz = Class.forName("org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser");
+    Class<?> clazz =
+        Class.forName(
+            "org.springframework.data.jpa.repository.query.JpaQueryEnhancer$HqlQueryParser");
     Constructor<?> constructor = ReflectionUtils.accessibleConstructor(clazz, String.class);
     return new ReactiveJpaQueryEnhancer(query, constructor.newInstance(query.getQueryString()));
   }

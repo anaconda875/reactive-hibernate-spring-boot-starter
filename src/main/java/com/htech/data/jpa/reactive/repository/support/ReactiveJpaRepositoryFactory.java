@@ -6,27 +6,19 @@ import com.htech.data.jpa.reactive.repository.query.ReactiveJpaQueryMethodFactor
 import com.htech.data.jpa.reactive.repository.query.ReactiveQueryRewriterProvider;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.metamodel.Metamodel;
-
-import java.lang.reflect.Method;
 import java.util.Optional;
-import java.util.stream.Stream;
-
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
-import org.springframework.data.jpa.repository.query.JpaQueryLookupStrategy;
-import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.jpa.repository.support.JpaMetamodelEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaPersistableEntityInformation;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
-import org.springframework.data.repository.core.support.SurroundingTransactionDetectorMethodInterceptor;
 import org.springframework.data.repository.query.*;
 import org.springframework.lang.Nullable;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Bao.Ngo
@@ -62,7 +54,7 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
     }
 
     return new JpaMetamodelEntityInformation(
-          domainClass, metamodel, entityManagerFactory.getPersistenceUnitUtil());
+        domainClass, metamodel, entityManagerFactory.getPersistenceUnitUtil());
   }
 
   @Override
@@ -79,7 +71,6 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
     return repository;
   }
 
-
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
     return SimpleReactiveJpaRepository.class;
@@ -90,11 +81,17 @@ public class ReactiveJpaRepositoryFactory extends ReactiveRepositoryFactorySuppo
   }
 
   @Override
-  protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable QueryLookupStrategy.Key key,
-                                                                 ValueExpressionDelegate valueExpressionDelegate) {
-    return Optional.of(ReactiveJpaQueryLookupStrategy.create(entityManagerFactory, sessionFactory, queryMethodFactory, key,
-        new CachingValueExpressionDelegate(valueExpressionDelegate),
-        queryRewriterProvider, escapeCharacter));
+  protected Optional<QueryLookupStrategy> getQueryLookupStrategy(
+      @Nullable QueryLookupStrategy.Key key, ValueExpressionDelegate valueExpressionDelegate) {
+    return Optional.of(
+        ReactiveJpaQueryLookupStrategy.create(
+            entityManagerFactory,
+            sessionFactory,
+            queryMethodFactory,
+            key,
+            new CachingValueExpressionDelegate(valueExpressionDelegate),
+            queryRewriterProvider,
+            escapeCharacter));
   }
 
   @Override

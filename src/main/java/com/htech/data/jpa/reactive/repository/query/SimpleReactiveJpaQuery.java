@@ -2,10 +2,7 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import org.hibernate.reactive.stage.Stage;
 import org.springframework.data.jpa.repository.QueryRewriter;
-import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
-import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ValueExpressionDelegate;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 
 public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery {
@@ -15,7 +12,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       Stage.SessionFactory sessionFactory,
       @Nullable String countQueryString,
       QueryRewriter queryRewriter,
-//      ReactiveExtensionAwareQueryMethodEvaluationContextProvider evaluationContextProvider,
+      //      ReactiveExtensionAwareQueryMethodEvaluationContextProvider evaluationContextProvider,
       ValueExpressionDelegate delegate) {
     this(
         method,
@@ -34,13 +31,7 @@ public class SimpleReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       QueryRewriter queryRewriter,
       ValueExpressionDelegate delegate) {
 
-    super(
-        method,
-        sessionFactory,
-        queryString,
-        countQueryString,
-        queryRewriter,
-        delegate);
+    super(method, sessionFactory, queryString, countQueryString, queryRewriter, delegate);
 
     // TODO
     //    validateQuery(getQuery().getQueryString(), "Validation failed for query for method %s",

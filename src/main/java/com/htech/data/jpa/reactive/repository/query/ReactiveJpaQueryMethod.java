@@ -12,7 +12,6 @@ import org.springframework.data.jpa.repository.query.*;
 import org.springframework.data.jpa.repository.query.Meta;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersSource;
 import org.springframework.data.repository.query.QueryMethod;
@@ -57,8 +56,8 @@ public class ReactiveJpaQueryMethod extends QueryMethod {
   private final Lazy<JpaEntityMetadata<?>> entityMetadata;
   private final Map<Class<? extends Annotation>, Optional<Annotation>> annotationCache;
 
-  //TODO
-//  private final Lazy<Optional<org.springframework.data.jpa.repository.Meta>> metaAnnotation;
+  // TODO
+  //  private final Lazy<Optional<org.springframework.data.jpa.repository.Meta>> metaAnnotation;
 
   protected ReactiveJpaQueryMethod(
       Method method,

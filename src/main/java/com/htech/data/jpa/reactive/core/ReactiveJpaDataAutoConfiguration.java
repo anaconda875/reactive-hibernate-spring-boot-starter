@@ -25,8 +25,8 @@ public class ReactiveJpaDataAutoConfiguration {
   }
 
   @Bean
-  public SurroundingTransactionDetectorMethodInterceptor surroundingTransactionDetectorMethodInterceptor(
-      Stage.SessionFactory sessionFactory) {
+  public SurroundingTransactionDetectorMethodInterceptor
+      surroundingTransactionDetectorMethodInterceptor(Stage.SessionFactory sessionFactory) {
     return new SurroundingTransactionDetectorMethodInterceptor(sessionFactory);
   }
 }

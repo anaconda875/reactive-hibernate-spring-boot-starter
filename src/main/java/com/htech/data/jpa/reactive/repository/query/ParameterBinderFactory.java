@@ -2,7 +2,6 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.data.expression.ReactiveValueEvaluationContextProvider;
 import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.util.Assert;
@@ -46,8 +45,8 @@ public class ParameterBinderFactory {
     Assert.notNull(delegate, "ValueExpressionDelegate must not be null");
 
     List<ParameterBinding> bindings = query.getParameterBindings();
-    QueryParameterSetterFactory expressionSetterFactory = QueryParameterSetterFactory.parsing(delegate,
-        valueExpressionContextProvider);
+    QueryParameterSetterFactory expressionSetterFactory =
+        QueryParameterSetterFactory.parsing(delegate, valueExpressionContextProvider);
 
     QueryParameterSetterFactory basicSetterFactory = QueryParameterSetterFactory.basic(parameters);
 

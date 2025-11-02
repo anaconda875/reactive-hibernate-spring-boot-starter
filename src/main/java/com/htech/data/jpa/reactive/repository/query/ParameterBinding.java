@@ -5,7 +5,6 @@ import static org.springframework.util.ObjectUtils.nullSafeHashCode;
 
 import java.lang.reflect.Array;
 import java.util.*;
-
 import org.springframework.data.expression.ValueExpression;
 import org.springframework.data.jpa.provider.PersistenceProvider;
 import org.springframework.data.repository.query.parser.Part;
@@ -100,10 +99,10 @@ public class ParameterBinding {
 
   public Object prepare(Object valueToBind) {
     return valueToBind;
-//    if (valueToBind instanceof Optional<?> op) {
-//      return (Optional<Object>) op;
-//    }
-//    return Optional.ofNullable(valueToBind);
+    //    if (valueToBind instanceof Optional<?> op) {
+    //      return (Optional<Object>) op;
+    //    }
+    //    return Optional.ofNullable(valueToBind);
   }
 
   public boolean bindsTo(ParameterBinding other) {

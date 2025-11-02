@@ -39,12 +39,17 @@ public class ReactiveJpaQueryLookupStrategy {
     Assert.notNull(delegate, "ValueExpressionDelegate must not be null");
 
     return switch (key != null ? key : QueryLookupStrategy.Key.CREATE_IF_NOT_FOUND) {
-      case CREATE -> new CreateQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider, escape);
-      case USE_DECLARED_QUERY ->
-          new DeclaredQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider);
-      case CREATE_IF_NOT_FOUND -> new CreateIfNotFoundQueryLookupStrategy(sessionFactory, queryMethodFactory,
-          new CreateQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider, escape),
-          new DeclaredQueryLookupStrategy(emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider),
+      case CREATE -> new CreateQueryLookupStrategy(
+          emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider, escape);
+      case USE_DECLARED_QUERY -> new DeclaredQueryLookupStrategy(
+          emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider);
+      case CREATE_IF_NOT_FOUND -> new CreateIfNotFoundQueryLookupStrategy(
+          sessionFactory,
+          queryMethodFactory,
+          new CreateQueryLookupStrategy(
+              emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider, escape),
+          new DeclaredQueryLookupStrategy(
+              emf, sessionFactory, queryMethodFactory, delegate, queryRewriterProvider),
           queryRewriterProvider);
     };
   }
@@ -122,6 +127,7 @@ public class ReactiveJpaQueryLookupStrategy {
 
     private final EntityManagerFactory entityManagerFactory;
     private final ValueExpressionDelegate delegate;
+
     public DeclaredQueryLookupStrategy(
         EntityManagerFactory entityManagerFactory,
         Stage.SessionFactory sessionFactory,
@@ -176,9 +182,7 @@ public class ReactiveJpaQueryLookupStrategy {
 
       RepositoryQuery query = NamedQuery.lookupFrom(method, sessionFactory, entityManagerFactory);
 
-      return query != null
-          ? query
-          : NO_QUERY;
+      return query != null ? query : NO_QUERY;
     }
 
     @Nullable

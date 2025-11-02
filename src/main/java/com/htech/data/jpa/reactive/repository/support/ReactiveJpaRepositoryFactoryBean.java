@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Stream;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -17,7 +16,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.dao.support.PersistenceExceptionTranslationInterceptor;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.querydsl.EntityPathResolver;
@@ -30,7 +28,6 @@ import org.springframework.data.repository.core.support.TransactionalRepositoryF
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
 import org.springframework.lang.Nullable;
-import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -78,11 +75,13 @@ public class ReactiveJpaRepositoryFactoryBean<
         new PersistenceExceptionHandlerPostProcessor(entityOperations.sessionFactory()));
     factory.addRepositoryProxyPostProcessor(
         new SessionAwarePostProcessor(entityOperations.sessionFactory()));
-    factory.addRepositoryProxyPostProcessor((f, repositoryInformation) -> {
-      if (isTransactionNeeded(repositoryInformation.getRepositoryInterface())) {
-        f.addAdvice(applicationContext.getBean(SurroundingTransactionDetectorMethodInterceptor.class));
-      }
-    });
+    factory.addRepositoryProxyPostProcessor(
+        (f, repositoryInformation) -> {
+          if (isTransactionNeeded(repositoryInformation.getRepositoryInterface())) {
+            f.addAdvice(
+                applicationContext.getBean(SurroundingTransactionDetectorMethodInterceptor.class));
+          }
+        });
 
     addRepositoryFactoryCustomizer(this::reOrderPostProcessors);
 
@@ -101,9 +100,14 @@ public class ReactiveJpaRepositoryFactoryBean<
           while (listIterator.hasNext()) {
             RepositoryProxyPostProcessor pp = listIterator.next();
             if (pp instanceof PersistenceExceptionTranslationRepositoryProxyPostProcessor
-              || pp.getClass().getName().equals("org.springframework.data.repository.core.support.TransactionalRepositoryProxyPostProcessor")) {
+                || pp.getClass()
+                    .getName()
+                    .equals(
+                        "org.springframework.data.repository.core.support.TransactionalRepositoryProxyPostProcessor")) {
               listIterator.remove();
-              if (processing.size() == 1 && processing.get(0) instanceof PersistenceExceptionTranslationRepositoryProxyPostProcessor) {
+              if (processing.size() == 1
+                  && processing.get(0)
+                      instanceof PersistenceExceptionTranslationRepositoryProxyPostProcessor) {
                 processing.add(0, pp);
               } else {
                 processing.add(pp);
@@ -135,12 +139,12 @@ public class ReactiveJpaRepositoryFactoryBean<
     this.escapeCharacter = EscapeCharacter.of(escapeCharacter);
   }
 
-
   private static boolean isTransactionNeeded(Class<?> repositoryClass) {
     Method[] methods = ReflectionUtils.getAllDeclaredMethods(repositoryClass);
 
     for (Method method : methods) {
-      if (Stream.class.isAssignableFrom(method.getReturnType()) || method.isAnnotationPresent(Procedure.class)) {
+      if (Stream.class.isAssignableFrom(method.getReturnType())
+          || method.isAnnotationPresent(Procedure.class)) {
         return true;
       }
     }

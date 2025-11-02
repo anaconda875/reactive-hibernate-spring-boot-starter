@@ -1,10 +1,9 @@
 package com.htech.data.jpa.reactive.repository.query;
 
+import java.util.Optional;
 import org.springframework.data.expression.*;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import reactor.core.publisher.Mono;
-
-import java.util.Optional;
 
 /**
  * @author Bao.Ngo
@@ -27,6 +26,4 @@ public class SpELParameterValueEvaluator implements ParameterValueEvaluator {
         .getEvaluationContextLater(accessor.getValues())
         .map(context -> Optional.ofNullable(expression.evaluate(context)));
   }
-
-
 }

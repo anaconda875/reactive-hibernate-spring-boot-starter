@@ -80,7 +80,11 @@ public class SessionAwarePostProcessor implements RepositoryProxyPostProcessor {
       }
 
       return session
-          .flatMap(s -> s.isOpen() ? Mono.defer(() -> Mono.fromCompletionStage(s.close())) : Mono.error(t))
+          .flatMap(
+              s ->
+                  s.isOpen()
+                      ? Mono.defer(() -> Mono.fromCompletionStage(s.close()))
+                      : Mono.error(t))
           .then(Mono.error(t));
     }
 
@@ -90,7 +94,8 @@ public class SessionAwarePostProcessor implements RepositoryProxyPostProcessor {
         return Mono.empty();
       }
 
-      return session.flatMap(s -> s.isOpen() ? Mono.defer(() -> Mono.fromCompletionStage(s.close())) : Mono.empty());
+      return session.flatMap(
+          s -> s.isOpen() ? Mono.defer(() -> Mono.fromCompletionStage(s.close())) : Mono.empty());
     }
   }
 }

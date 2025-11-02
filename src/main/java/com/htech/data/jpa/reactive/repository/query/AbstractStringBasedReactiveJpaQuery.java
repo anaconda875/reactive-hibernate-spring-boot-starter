@@ -41,13 +41,13 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
     super(method, sessionFactory);
 
     Assert.hasText(queryString, "Query string must not be null or empty");
-    Assert.notNull(
-        delegate, "ValueExpressionDelegate must not be null");
+    Assert.notNull(delegate, "ValueExpressionDelegate must not be null");
     Assert.notNull(queryRewriter, "QueryRewriter must not be null");
 
     this.delegate = delegate;
     ReactiveJpaParameters parameters = method.getParameters();
-    this.valueExpressionContextProvider = (ReactiveValueEvaluationContextProvider) delegate.createValueContextProvider(parameters);
+    this.valueExpressionContextProvider =
+        (ReactiveValueEvaluationContextProvider) delegate.createValueContextProvider(parameters);
     this.query =
         new ExpressionBasedStringQuery(
             queryString, method.getEntityInformation(), delegate, method.isNativeQuery());
@@ -80,10 +80,9 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
       ReactiveJpaQueryMethod method) {
     return Mono.zip(
             Mono.fromSupplier(
-                () ->
-                    querySortRewriter.getSorted(query, accessor.getSort())
-                    /*QueryEnhancerFactory.forQuery(query)
-                        .applySorting(accessor.getSort(), query.getAlias())*/),
+                () -> querySortRewriter.getSorted(query, accessor.getSort())
+                /*QueryEnhancerFactory.forQuery(query)
+                .applySorting(accessor.getSort(), query.getAlias())*/ ),
             Mono.fromSupplier(
                 () -> getQueryMethod().getResultProcessor().withDynamicProjection(accessor)))
         .flatMap(
@@ -201,8 +200,8 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
   }
 
   String applySorting(CacheableQuery cacheableQuery) {
-    return QueryEnhancerFactory.forQuery(cacheableQuery.getDeclaredQuery()).applySorting(cacheableQuery.getSort(),
-        cacheableQuery.getAlias());
+    return QueryEnhancerFactory.forQuery(cacheableQuery.getDeclaredQuery())
+        .applySorting(cacheableQuery.getSort(), cacheableQuery.getAlias());
   }
 
   protected String potentiallyRewriteQuery(
@@ -284,8 +283,8 @@ public class AbstractStringBasedReactiveJpaQuery extends AbstractReactiveJpaQuer
 
   class CachingQuerySortRewriter implements QuerySortRewriter {
 
-    private final ConcurrentLruCache<CacheableQuery, String> queryCache = new ConcurrentLruCache<>(16,
-        AbstractStringBasedReactiveJpaQuery.this::applySorting);
+    private final ConcurrentLruCache<CacheableQuery, String> queryCache =
+        new ConcurrentLruCache<>(16, AbstractStringBasedReactiveJpaQuery.this::applySorting);
 
     @Override
     public String getSorted(DeclaredQuery query, Sort sort) {

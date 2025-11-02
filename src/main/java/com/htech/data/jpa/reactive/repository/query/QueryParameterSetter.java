@@ -192,9 +192,7 @@ public interface QueryParameterSetter {
 
       try {
 
-        return Proxy.isProxyClass(queryType)
-            ? query.unwrap(null).getClass()
-            : queryType;
+        return Proxy.isProxyClass(queryType) ? query.unwrap(null).getClass() : queryType;
 
       } catch (RuntimeException e) {
 

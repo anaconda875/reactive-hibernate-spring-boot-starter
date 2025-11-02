@@ -302,9 +302,7 @@ public class PartTreeReactiveJpaQuery extends AbstractReactiveJpaQuery {
 
     private Sort getDynamicSort(JpaParametersParameterAccessor accessor) {
 
-      return parameters.potentiallySortsDynamically()
-          ? accessor.getSort()
-          : Sort.unsorted();
+      return parameters.potentiallySortsDynamically() ? accessor.getSort() : Sort.unsorted();
     }
   }
 

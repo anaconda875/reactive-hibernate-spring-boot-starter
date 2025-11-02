@@ -2,7 +2,6 @@ package com.htech.data.jpa.reactive.repository.query;
 
 import jakarta.persistence.TemporalType;
 import java.util.List;
-
 import org.springframework.data.expression.*;
 import org.springframework.data.jpa.repository.query.JpaParametersParameterAccessor;
 import org.springframework.data.repository.query.Parameter;
@@ -18,7 +17,8 @@ public abstract class QueryParameterSetterFactory {
   static QueryParameterSetterFactory parsing(
       ValueExpressionParser parser,
       ReactiveValueEvaluationContextProvider valueExpressionContextProvider) {
-    return new QueryParameterSetterFactory.ExpressionBasedQueryParameterSetterFactory(parser, valueExpressionContextProvider);
+    return new QueryParameterSetterFactory.ExpressionBasedQueryParameterSetterFactory(
+        parser, valueExpressionContextProvider);
   }
 
   @Nullable
@@ -89,10 +89,7 @@ public abstract class QueryParameterSetterFactory {
         () ->
             String.format(
                 "At least %s parameter(s) provided but only %s parameter(s) present in query",
-                parameterIndex + 1,
-                bindableParameters.getNumberOfParameters()
-                )
-        );
+                parameterIndex + 1, bindableParameters.getNumberOfParameters()));
 
     return bindableParameters.getParameter(parameterIndex);
   }
@@ -104,7 +101,8 @@ public abstract class QueryParameterSetterFactory {
     private final ReactiveValueEvaluationContextProvider evaluationContextProvider;
 
     public ExpressionBasedQueryParameterSetterFactory(
-        ValueExpressionParser parser, ReactiveValueEvaluationContextProvider evaluationContextProvider) {
+        ValueExpressionParser parser,
+        ReactiveValueEvaluationContextProvider evaluationContextProvider) {
       this.parser = parser;
       this.evaluationContextProvider = evaluationContextProvider;
     }
@@ -116,11 +114,16 @@ public abstract class QueryParameterSetterFactory {
         return null;
       }
 
-      return createSetter(new SpELParameterValueEvaluator(e.expression(), evaluationContextProvider), binding, null);
+      return createSetter(
+          new SpELParameterValueEvaluator(e.expression(), evaluationContextProvider),
+          binding,
+          null);
     }
 
-    private Object evaluateExpression(ValueExpression expression, JpaParametersParameterAccessor accessor) {
-      ValueEvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(accessor.getValues());
+    private Object evaluateExpression(
+        ValueExpression expression, JpaParametersParameterAccessor accessor) {
+      ValueEvaluationContext evaluationContext =
+          evaluationContextProvider.getEvaluationContext(accessor.getValues());
       return expression.evaluate(evaluationContext);
     }
   }
@@ -188,10 +191,7 @@ public abstract class QueryParameterSetterFactory {
           () ->
               String.format(
                   "At least %s parameter(s) provided but only %s parameter(s) present in query",
-                  binding.getRequiredPosition(),
-                  parameterMetadata.size()
-                  )
-          );
+                  binding.getRequiredPosition(), parameterMetadata.size()));
 
       ParameterMetadataProvider.ParameterMetadata<?> metadata =
           parameterMetadata.get(parameterIndex);

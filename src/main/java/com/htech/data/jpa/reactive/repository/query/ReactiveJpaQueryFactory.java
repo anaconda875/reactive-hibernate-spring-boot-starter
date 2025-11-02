@@ -27,19 +27,9 @@ public enum ReactiveJpaQueryFactory {
 
     return method.isNativeQuery()
         ? new NativeReactiveJpaQuery(
-            method,
-            sessionFactory,
-            queryString,
-            countQueryString,
-            queryRewriter,
-            delegate)
+            method, sessionFactory, queryString, countQueryString, queryRewriter, delegate)
         : new SimpleReactiveJpaQuery(
-            method,
-            sessionFactory,
-            queryString,
-            countQueryString,
-            queryRewriter,
-            delegate);
+            method, sessionFactory, queryString, countQueryString, queryRewriter, delegate);
   }
 
   // TODO

@@ -38,7 +38,6 @@ public abstract class ReactiveJpaQueryExecution {
     Assert.notNull(accessor, "JpaParametersParameterAccessor must not be null");
 
     return doExecute(query, accessor, session);
-
   }
 
   protected Publisher<?> doExecute(
@@ -73,7 +72,6 @@ public abstract class ReactiveJpaQueryExecution {
                       }))
           .flatMapMany(Flux::fromIterable);
     }
-
   }
 
   static class SingleEntityExecution extends ReactiveJpaQueryExecution {
@@ -124,12 +122,11 @@ public abstract class ReactiveJpaQueryExecution {
 
     /*    private final Stage.SessionFactory sessionFactory;
 
-        private final boolean flush;
-        private final boolean clear;*/
+    private final boolean flush;
+    private final boolean clear;*/
 
     public ModifyingExecution(
-        /*ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory*/ ) {
-    }
+        /*ReactiveJpaQueryMethod method, Stage.SessionFactory sessionFactory*/ ) {}
 
     @Override
     protected Publisher<?> doExecute(

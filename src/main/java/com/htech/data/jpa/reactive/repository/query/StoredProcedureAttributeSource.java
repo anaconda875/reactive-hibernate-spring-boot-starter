@@ -22,7 +22,6 @@ import org.springframework.util.StringUtils;
  * @author Bao.Ngo
  */
 public enum StoredProcedureAttributeSource {
-
   INSTANCE;
 
   public StoredProcedureAttributes createFrom(Method method, JpaEntityMetadata<?> entityMetadata) {

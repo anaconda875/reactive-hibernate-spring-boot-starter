@@ -10,10 +10,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.springframework.data.expression.ValueExpression;
 import org.springframework.data.expression.ValueExpressionParser;
-import org.springframework.data.repository.query.SpelQueryContext;
 import org.springframework.data.repository.query.ValueExpressionQueryRewriter;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.lang.Nullable;
@@ -122,10 +120,10 @@ public class StringQuery implements DeclaredQuery {
 
     private static final String EXPRESSION_PARAMETER_PREFIX = "__$synthetic$__";
     public static final String POSITIONAL_OR_INDEXED_PARAMETER = "\\?(\\d*+(?![#\\w]))";
-     /*.....................................................................^ not followed by a hash
-     or a letter.
-     .................................................................^ zero or more digits.
-     .............................................................^ start with a question mark.*/
+    /*.....................................................................^ not followed by a hash
+    or a letter.
+    .................................................................^ zero or more digits.
+    .............................................................^ start with a question mark.*/
     private static final Pattern PARAMETER_BINDING_BY_INDEX =
         Pattern.compile(POSITIONAL_OR_INDEXED_PARAMETER);
     private static final Pattern PARAMETER_BINDING_PATTERN;
@@ -190,9 +188,8 @@ public class StringQuery implements DeclaredQuery {
         greatestParameterIndex = 0;
       }
 
-      ValueExpressionQueryRewriter.ParsedQuery parsedQuery = createSpelExtractor(query,
-          parametersShouldBeAccessedByIndex,
-          greatestParameterIndex);
+      ValueExpressionQueryRewriter.ParsedQuery parsedQuery =
+          createSpelExtractor(query, parametersShouldBeAccessedByIndex, greatestParameterIndex);
 
       String resultingQuery = parsedQuery.getQueryString();
       Matcher matcher = PARAMETER_BINDING_PATTERN.matcher(resultingQuery);
@@ -239,8 +236,8 @@ public class StringQuery implements DeclaredQuery {
                 String.format(
                     "We need either a name or an index; Offending query string: %s", query));
 
-        ValueExpression expression = parsedQuery
-            .getParameter(parameterName == null ? parameterIndexString : parameterName);
+        ValueExpression expression =
+            parsedQuery.getParameter(parameterName == null ? parameterIndexString : parameterName);
 
         String replacement;
 
@@ -325,15 +322,18 @@ public class StringQuery implements DeclaredQuery {
        */
       int expressionParameterIndex = parametersShouldBeAccessedByIndex ? greatestParameterIndex : 0;
 
-      BiFunction<Integer, String, String> indexToParameterName = parametersShouldBeAccessedByIndex
-          ? (index, expression) -> String.valueOf(index + expressionParameterIndex + 1)
-          : (index, expression) -> EXPRESSION_PARAMETER_PREFIX + (index + 1);
+      BiFunction<Integer, String, String> indexToParameterName =
+          parametersShouldBeAccessedByIndex
+              ? (index, expression) -> String.valueOf(index + expressionParameterIndex + 1)
+              : (index, expression) -> EXPRESSION_PARAMETER_PREFIX + (index + 1);
 
       String fixedPrefix = parametersShouldBeAccessedByIndex ? "?" : ":";
 
-      BiFunction<String, String, String> parameterNameToReplacement = (prefix, name) -> fixedPrefix + name;
-      ValueExpressionQueryRewriter rewriter = ValueExpressionQueryRewriter.of(ValueExpressionParser.create(),
-          indexToParameterName, parameterNameToReplacement);
+      BiFunction<String, String, String> parameterNameToReplacement =
+          (prefix, name) -> fixedPrefix + name;
+      ValueExpressionQueryRewriter rewriter =
+          ValueExpressionQueryRewriter.of(
+              ValueExpressionParser.create(), indexToParameterName, parameterNameToReplacement);
 
       return rewriter.parse(queryWithSpel);
     }

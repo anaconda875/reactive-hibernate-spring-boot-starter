@@ -198,13 +198,7 @@ public class ParameterMetadataProvider {
       }
 
       return ((Collection<String>) collection)
-          .stream()
-              .map(
-                  it ->
-                      it == null
-                          ? null
-                          : it.toUpperCase())
-              .collect(Collectors.toList());
+          .stream().map(it -> it == null ? null : it.toUpperCase()).collect(Collectors.toList());
     }
   }
 }

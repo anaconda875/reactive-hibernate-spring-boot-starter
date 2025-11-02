@@ -28,5 +28,4 @@ public class SurroundingTransactionDetectorMethodInterceptor implements MethodIn
 
     return proceed;
   }
-
 }

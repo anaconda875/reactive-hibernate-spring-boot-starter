@@ -7,10 +7,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.QueryRewriter;
 import org.springframework.data.jpa.repository.query.InvalidJpaQueryMethodException;
 import org.springframework.data.repository.query.Parameters;
-import org.springframework.data.repository.query.ReactiveQueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.ValueExpressionDelegate;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Mono;
 
@@ -27,13 +25,7 @@ public class NativeReactiveJpaQuery extends AbstractStringBasedReactiveJpaQuery 
       QueryRewriter rewriter,
       ValueExpressionDelegate delegate) {
 
-    super(
-        method,
-        sessionFactory,
-        queryString,
-        countQueryString,
-        rewriter,
-        delegate);
+    super(method, sessionFactory, queryString, countQueryString, rewriter, delegate);
 
     Parameters<?, ?> parameters = method.getParameters();
 

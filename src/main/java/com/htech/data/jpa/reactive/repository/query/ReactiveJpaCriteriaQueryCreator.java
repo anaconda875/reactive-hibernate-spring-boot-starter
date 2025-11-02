@@ -105,10 +105,7 @@ public class ReactiveJpaCriteriaQueryCreator
           typeToRead.isInterface()
               ? query.multiselect(selections)
               : query.select(
-                  (Selection)
-                      builder.construct(
-                          typeToRead,
-                          selections.toArray(new Selection[0])));
+                  (Selection) builder.construct(typeToRead, selections.toArray(new Selection[0])));
 
     } else if (tree.isExistsProjection()) {
       if (root.getModel().hasSingleIdAttribute()) {
